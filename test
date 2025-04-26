@@ -1,0 +1,17 @@
+let monBouton;
+
+function setup() {
+  createCanvas(200, 100);
+  monBouton = createButton('Cliquez ici');
+  monBouton.position(50, 30); // Définit la position du bouton (x, y)
+  monBouton.mousePressed(boutonClique); // Attache une fonction à l'événement de clic
+}
+
+function draw() {
+  background(220);
+}
+
+function boutonClique() {
+  console.log('Le bouton a été cliqué !');
+  // Ajoute ici le code à exécuter lorsque le bouton est cliqué
+}
