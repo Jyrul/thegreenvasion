@@ -8,17 +8,18 @@ const TARGET_CIRCLE_DIAMETER = 150;
 // Colision pour changement de vue
 const LABO_CIRCLE_DIAMETER = 100;
 const MAP_CIRCLE_DIAMETER = 100;
+let laboCircleX, laboCircleY, mapCircleX, mapCircleY;
 
 // Tableau pour stocker les infos des cercles éléments (gauche - écran 1)
 let elementCircles = [];
 
-// Variables pour le cercle cible (droite - écran 1)
+// Variables pour le cercle cible (droite - écran 2)
 let targetCirclePos;
 let targetStoredColors = []; // Stocke les objets color p5.js déposés (max 2)
 let targetStoredNames = []; // Stocke les noms correspondants
 let currentTargetColor; // La couleur affichée (mélange)
 
-// Variables pour gérer le glisser-déposer (écran 1 uniquement)
+// Variables pour gérer le glisser-déposer (écran 2 uniquement)
 let draggedCircleIndex = -1;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
@@ -27,11 +28,14 @@ let dragOffsetY = 0;
 const LABEL_TEXT_SIZE = 16;
 const LABEL_PADDING = 8;
 
-// Variables pour les boutons (écran 1)
+// Variables pour les boutons (écran 2)
 let resetButton;
-let testButton; // Nouveau bouton "Faire tester"
+let testButton;
 
-// Variable pour stocker les données à tester sur l'écran 2
+// Variables pour les boutons (écran 2 & 3)
+let backButton;
+
+// Variable pour stocker les données à tester sur l'écran 3
 let testData = null; // Sera { colors: [...], names: [...] }
 
 // Variable check
@@ -43,11 +47,10 @@ let mapCircles = [];
 const MAP_CIRCLE_BASE_DIAMETER = 120;
 
 
-
-
 // --- Fonction setup() ---
 function setup() {
 }
+
 
 // --- Fonction draw() ---
 function draw() {
@@ -58,49 +61,51 @@ function draw() {
   // Afficher l'écran actuel
   if (currentScreen === 1) {
     menuScreen();
-    ifPreloadLaboScreen = true;
     // S'assurer que les boutons sont visibles (au cas où on reviendrait à l'écran 1)
-    if (resetButton && testButton) {
-        resetButton.show();
-        testButton.show();
+    if (resetButton && testButton && backButton) {
+        resetButton.hide();
+        testButton.hide();
+        backButton.hide();
     }
+  
   } else if (currentScreen === 2) {
     //Charger la vue
     if(ifPreloadLaboScreen == true){
       preloadLaboScreen();
-    }
-      
+    }  
     //Afficher la vue
     laboSreen();
     
-    //Faire en sorte que ça ne se charge qu'une fois
-    ifPreloadLaboScreen = false;
     // S'assurer que les boutons sont visibles (au cas où on reviendrait à l'écran 1)
-    if (resetButton && testButton) {
-        resetButton.show();
-        testButton.show();
-    }
-  } else if (currentScreen === 3) {
+    if (resetButton && testButton && backButton) {
+      resetButton.show();
+      testButton.show();
+      backButton.show();
+  }
+  
+} else if (currentScreen === 3) {
     mapScreen();
-    // S'assurer que les boutons sont cachés
-     if (resetButton && testButton) {
-        resetButton.hide();
-        testButton.hide();
+    if (resetButton && testButton && backButton) {
+      resetButton.hide();
+      testButton.hide();
+      backButton.show();
     }
   }
 }
 
-
+function preloadMenuScreen() {
+  
+}
 
 // --- Fonction pour dessiner l'écran 1 (Labo) ---
 function menuScreen() {
   text("sovihsv", width/2, height/2)
   fill(0);
 
-  let laboCircleX = width/4;
-  let laboCircleY = height/2;
-  let mapCircleX = 3*width/4;
-  let mapCircleY = height/2;
+  laboCircleX = width/4;
+  laboCircleY = height/2;
+  mapCircleX = 3*width/4;
+  mapCircleY = height/2;
   
   circle(laboCircleX, laboCircleY, LABO_CIRCLE_DIAMETER);
   circle(mapCircleX, mapCircleY, MAP_CIRCLE_BASE_DIAMETER);
@@ -136,7 +141,8 @@ function preloadLaboScreen() {
 
   // Créer les boutons
   resetButton = createButton('Vider');
-  testButton = createButton('Faire tester'); // Création du nouveau bouton
+  testButton = createButton('Faire tester');
+  backButton = createButton('Retour'); // Création du nouveau bouton
 
   // Positionner et styler les boutons
   styleActionButtons();
@@ -144,6 +150,10 @@ function preloadLaboScreen() {
   // Associer les fonctions aux clics
   resetButton.mousePressed(resetTargetColor);
   testButton.mousePressed(prepareColorTest); // Associer la nouvelle fonction
+  backButton.mousePressed(goBackView);
+
+  //Faire en sorte que ça ne se charge qu'une fois
+  ifPreloadLaboScreen = false;
 }
 
 // --- Fonction pour dessiner l'écran 2 (Labo) ---
@@ -216,7 +226,7 @@ function mapScreen() {
 
 // --- Fonction pour styler et positionner les boutons ---
 function styleActionButtons() {
-  if (!resetButton || !testButton) return; // Sécurité
+  if (!resetButton || !testButton || !backButton) return; // Sécurité
 
   // Positionnement DYNAMIQUE basé sur la position de la cible
   let commonY = targetCirclePos.y + TARGET_CIRCLE_DIAMETER / 2 + 30; // Y commun sous la cible
@@ -230,16 +240,27 @@ function styleActionButtons() {
   let testButtonX = targetCirclePos.x + testButton.width + spacing;
   testButton.position(testButtonX - testButton.width, commonY - testButton.height / 2); // Ajustement pour aligner à droite du centre
 
+  // Positionner Retour (au centre)
+  let backButtonX = width/2 - backButton.width/2;
+  let backButtonY = 9*height/10;
+  backButton.position(backButtonX, backButtonY); // Ajustement pour aligner à droite du centre
+
   // Style commun (optionnel)
-  [resetButton, testButton].forEach(button => {
+  [resetButton, testButton, backButton].forEach(button => {
       button.style('padding', '10px');
       button.style('font-size', '16px');
       button.style('cursor', 'pointer');
       // Initialement, cacher les boutons s'ils ne doivent pas être visibles
-      if (currentScreen !== 2) {
-          button.hide();
+      if (currentScreen == 3) {
+        resetButton.hide();
+        testButton.hide();
+        backButton.show();
+      } else if (currentScreen == 2){
+        resetButton.show();
+        testButton.show();
+        backButton.show();
       } else {
-          button.show();
+        button.hide();
       }
   });
 }
@@ -280,10 +301,10 @@ function initializePositions() {
       // Réinitialiser la taille si nécessaire (par exemple, si on quitte et revient)
       // mapCircles[i].currentDiameter = MAP_CIRCLE_BASE_DIAMETER; // Décommenter si besoin
   }
+}
 
-
-  // Repositionner les boutons après avoir recalculé targetCirclePos
-  styleActionButtons();
+function goBackView() {
+  currentScreen = 1;
 }
 
 
@@ -326,7 +347,7 @@ function prepareColorTest() {
 }
 
 
-
+//////  Gestions des intéractions  //////
 
 // --- Fonction keyPressed() ---
 function keyPressed() {
@@ -355,7 +376,7 @@ function mousePressed() {
       ifPreloadLaboScreen = true;
     }
 
-    console.log();
+    console.log(dist(mouseX, mouseY,laboCircleX, laboCircleY));
 
     if (dist(mouseX, mouseY, mapCircleX, mapCircleY) < MAP_CIRCLE_DIAMETER) {
       currentScreen = 3;
@@ -426,7 +447,7 @@ function applyTestEffect(targetMapCircle, data) {
 
 function mouseDragged() {
   // Ne glisser que sur l'écran 1
-  if (currentScreen !== 1 || draggedCircleIndex === -1) {
+  if (currentScreen !== 2 || draggedCircleIndex === -1) {
     return;
   }
   let circle = elementCircles[draggedCircleIndex];
@@ -436,7 +457,7 @@ function mouseDragged() {
 
 function mouseReleased() {
   // Ne gérer le relâchement que sur l'écran 1
-  if (currentScreen !== 1 || draggedCircleIndex === -1) {
+  if (currentScreen !== 2 || draggedCircleIndex === -1) {
     return;
   }
 
