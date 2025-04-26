@@ -11,7 +11,7 @@ let currentScreen = 1;
 const ELEMENT_CIRCLE_DIAMETER = 100;
 const TARGET_CIRCLE_DIAMETER = 150;
 const LABO_CIRCLE_DIAMETER = 100; // Pour le "bouton" dessiné allant au labo
-const MAP_CIRCLE_BASE_DIAMETER = 120;
+const MAP_CIRCLE_BASE_DIAMETER = 1;
 
 // Position du "bouton" dessiné pour aller au Labo (calculée dans menuScreen)
 let laboCircleX, laboCircleY;
@@ -39,6 +39,11 @@ let dragOffsetY = 0;
 
 // Variables pour les cercles de la carte (affichée sur l'écran 1)
 let mapCircles = [];
+
+// Variables pour les cercles de la carte (affichée sur l'écran 3)
+let seaweedOptionPosY, seaweedOptionDiam;
+let seaweedGreenOptionPosX, seaweedPurpleOptionPosX, seaweedRedOptionPosX;
+let testNameSeaweed;
 
 //////  Boutons p5.dom //////
 let passTurnButton; // Écran 1 (Menu/Map)
@@ -77,8 +82,8 @@ function setup() {
   // Définir les propriétés des 3 cercles de la carte (écran 1)
   mapCircles = [
     { name: "Zone Verte", color: color(0, 150, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER, growthSpeed: 6 }, // Vert
-    { name: "Zone Rouge", color: color(200, 0, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER, growthSpeed: 9 }, // Rouge
-    { name: "Zone Bleue", color: color(0, 0, 200), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER, growthSpeed: 13 }  // Bleu
+    { name: "Zone Violette", color: color(200, 0, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER, growthSpeed: 9 }, // Rouge
+    { name: "Zone Rouge", color: color(0, 0, 200), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER, growthSpeed: 13 }  // Bleu
   ];
 
   // Définir les propriétés des 4 cercles éléments (écran 2 Labo)
@@ -99,9 +104,9 @@ function setup() {
   backButton = createButton('Retour'); // Retour du Labo au Menu, ou du Test au Labo
 
   // --- ASSOCIER LES FONCTIONS AUX CLICS ---
-  passTurnButton.mousePressed(updateSeaweedGrowth); // Correction typo: update et pas udpdate
+  passTurnButton.mousePressed(updateNextTurn); // Correction typo: update et pas udpdate
   resetButton.mousePressed(resetTargetColor);
-  testButton.mousePressed(goToTestResultsScreen); // Fonction pour aller à l'écran 3
+  testButton.mousePressed(goToTestTargetScreen); // Fonction pour aller à l'écran 3
   backButton.mousePressed(handleBackButton); // Fonction unique pour gérer le retour
 
   // --- POSITIONNER ET STYLER LES BOUTONS ---
@@ -128,7 +133,7 @@ function draw() {
   } else if (currentScreen === 2) {
     laboSreen();
   } else if (currentScreen === 3) {
-    testResultScreen(); // Afficher l'écran de résultats
+    testTargetScreen(); // Afficher l'écran de résultats
   }
   // Ajouter d'autres écrans si nécessaire
 }
@@ -200,19 +205,22 @@ function laboSreen() {
 }
 
 // --- Fonction pour dessiner l'écran 3 (Résultats du Test) ---
-function testResultScreen() {
+function testTargetScreen() {
   fill(0);
   textAlign(CENTER, CENTER);
   textSize(24);
-  text("Résultats du Test", width / 2, height / 3);
+  text("Choix de l'algue à étudier", width / 2, height / 3);
 
   if (testData && testData.names.length > 0) {
-    textSize(18);
-    text("Éléments testés : " + testData.names.join(' + '), width / 2, height / 2);
-    // Ici, tu ajouterais la logique pour appliquer l'effet sur une zone cible
-    // et afficher le résultat.
-    // Exemple: applyTestEffect(mapCircles[0], testData); // Tester sur la zone verte par défaut
-    text("Interaction à implémenter...", width/2, height/2 + 40);
+    seaweedOptionDiam = 100;
+    seaweedOptionPosY = height/2;
+    seaweedGreenOptionPosX = width/2 - 120;
+    seaweedPurpleOptionPosX = width/2;
+    seaweedRedOptionPosX = width/2 + 120;
+
+    circle(seaweedGreenOptionPosX, seaweedOptionPosY, seaweedOptionDiam); //algues 1
+    circle(seaweedPurpleOptionPosX, seaweedOptionPosY, seaweedOptionDiam); //algues 2
+    circle(seaweedRedOptionPosX, seaweedOptionPosY, seaweedOptionDiam); //algues 3
   } else {
     textSize(18);
     text("Aucune donnée de test disponible.", width / 2, height / 2);
@@ -361,6 +369,7 @@ function updateTargetColor() {
   }
 }
 
+// --- Reset le contenue du béchère (Écran 2 Labo) ---
 function resetTargetColor() {
   if (currentScreen === 2) { // Action possible seulement dans le Labo
     targetStoredColors = []; // Vider le tableau des couleurs
@@ -405,7 +414,7 @@ function goToMenuScreen() {
   console.log("Transition vers Écran 1: Menu");
 }
 
-function goToTestResultsScreen() {
+function goToTestTargetScreen() {
   if (currentScreen === 2) { // Ne peut être appelé que depuis le Labo
     if (targetStoredColors.length > 0) { // Ne transférer que s'il y a quelque chose
       // Copier les données actuelles pour le test
@@ -472,8 +481,22 @@ function mousePressed() {
       }
     }
   }
-  // --- Interactions autres écrans ---
-  // else if (currentScreen === 3) { ... }
+  // --- Interactions autres écrans (Test) ---
+  else if (currentScreen === 3) {
+    if (dist(mouseX, mouseY, seaweedGreenOptionPosX, seaweedOptionPosY) < seaweedOptionDiam) {
+      testNameSeaweed = "Green";
+      currentScreen = 1;
+      console.log(testNameSeaweed);
+    } else if (dist(mouseX, mouseY, seaweedPurpleOptionPosX, seaweedOptionPosY) < seaweedOptionDiam) {
+      testNameSeaweed = "Purple";
+      currentScreen = 1;
+      console.log(testNameSeaweed);
+    } else if (dist(mouseX, mouseY, seaweedRedOptionPosX, seaweedOptionPosY) < seaweedOptionDiam) {
+      testNameSeaweed = "Red";
+      currentScreen = 1;
+      console.log(testNameSeaweed);
+    }    
+  }
 }
 
 function mouseDragged() {
@@ -543,7 +566,82 @@ function windowResized() {
 // -----------------------------------------------------------------------------
 
 // --- Fonction appelée par le bouton "Passer le tour" (Écran 1) ---
+function updateNextTurn() {
+  //Évolution Naturel
+  updateSeaweedGrowth();
+
+  //Évolution lier aux produits ajoutées
+  addSolutionCreated();
+
+  //Reset les données des tour précédents
+  testNameSeaweed = null;
+  targetStoredNames = [];
+}
+
+function addSolutionCreated() {
+  //En fonction des matériaux apporter aux algues, leurs population augmente ou diminue
+  if (testNameSeaweed == "Green") {
+    targetStoredNames.forEach(item => {
+      switch (item) {
+        case "Zinc":
+          mapCircles[0].currentDiameter += 4; 
+          break;
+        case "Cuivre":
+          mapCircles[0].currentDiameter += 0; 
+          break;
+        case "Azote":
+          mapCircles[0].currentDiameter -= 3; 
+          break;
+        case "Soufre":
+          mapCircles[0].currentDiameter -= 6; 
+          break;
+        default:
+          break;
+      }
+    });
+  } else if (testNameSeaweed == "Purple") {
+    targetStoredNames.forEach(item => {
+      switch (item) {
+        case "Zinc":
+          mapCircles[0].currentDiameter -= 4; 
+          break;
+        case "Cuivre":
+          mapCircles[0].currentDiameter += 7; 
+          break;
+        case "Azote":
+          mapCircles[0].currentDiameter -= 1; 
+          break;
+        case "Soufre":
+          mapCircles[0].currentDiameter -= 8; 
+          break;
+        default:
+          break;
+      }
+    });
+  } else if (testNameSeaweed == "Red") {
+    targetStoredNames.forEach(item => {
+      switch (item) {
+        case "Zinc":
+          mapCircles[0].currentDiameter += 0; 
+          break;
+        case "Cuivre":
+          mapCircles[0].currentDiameter -= 19; 
+          break;
+        case "Azote":
+          mapCircles[0].currentDiameter -= 9; 
+          break;
+        case "Soufre":
+          mapCircles[0].currentDiameter += 12; 
+          break;
+        default:
+          break;
+      }
+    });
+  }
+}
+
 function updateSeaweedGrowth() {
+  //Évolution Naturel
   if (currentScreen === 1) {
       console.log("Passing turn, updating seaweed growth...");
       // Augmenter le diamètre des cercles de la carte
