@@ -1,0 +1,4 @@
+le bouton reset apparait dans l'écran 2 faut qu'il soit que dans l'écran 1
+dans l'ecran 2 on a 3 cercle : vert, rouge et bleu
+cercle blanc a droite récupéré l'info fusion ou simple (a coter de vider un bouton apparait "faire tester" et déplacer dans le screen 2 avec toujour l'info su melange ou de l'unie et lacher sur l'un des 3 cercle)
+le cercle vert quand il recoit du zinc il s'agrandit de 50 en taille
