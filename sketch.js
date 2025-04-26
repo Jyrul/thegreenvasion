@@ -1,11 +1,12 @@
-// Variable pour savoir quel écran afficher
-// 1: Menu (avec carte et bouton vers Labo)
-// 2: Labo (avec éléments à glisser, cible, boutons Vider/Tester/Retour)
-// 3: Écran de Test (affiche les résultats - à développer)
 let currentScreen = 1;
 
-// Variable tour par tour (si utilisée)
-// let nbrTurn; // Décommenter si nécessaire
+// --- AJOUT : Variables pour stocker les images ---
+let imgLabo;
+let imgCart;
+let imgAlgueVerte;
+let imgAlgueRouge;
+let imgAlgueViolette;
+// -----------------------------------------------
 
 // Diamètres des cercles
 const ELEMENT_CIRCLE_DIAMETER = 100;
@@ -18,13 +19,6 @@ let laboCircleX, laboCircleY;
 
 // Tableau pour stocker les infos des cercles éléments (gauche - écran 2 Labo)
 let elementCircles = [];
-
-// Images (à décommenter et charger si nécessaire dans preload)
-/*
-let purpleSeaweed0, purpleSeaweed10, purpleSeaweed20, purpleSeaweed30, purpleSeaweed40, purpleSeaweed50, purpleSeaweed60, purpleSeaweed70, purpleSeaweed80, purpleSeaweed90, purpleSeaweed100;
-let redSeaweed0, redSeaweed10, redSeaweed20, redSeaweed30, redSeaweed40, redSeaweed50, redSeaweed60, redSeaweed70, redSeaweed80, redSeaweed90, redSeaweed100;
-let greenSeaweed0, greenSeaweed10, greenSeaweed20, greenSeaweed30, greenSeaweed40, greenSeaweed50, greenSeaweed60, greenSeaweed70, greenSeaweed80, greenSeaweed90, greenSeaweed100;
-*/
 
 // Variables pour le cercle cible (droite - écran 2 Labo)
 let targetCirclePos;
@@ -53,26 +47,30 @@ let testData = null; // Sera { colors: [...], names: [...] }
 const LABEL_TEXT_SIZE = 16;
 const LABEL_PADDING = 8;
 
-// -----------------------------------------------------------------------------
-// --- PRELOAD (si besoin pour les images) ---
-// -----------------------------------------------------------------------------
-/*
+// --- AJOUT : Fonction preload pour charger les images ---
 function preload() {
-  // Décommentez et chargez vos images ici
-  // purpleSeaweed10 = loadImage("/Algue_Violette/algue_rouge_1.png");
-  // ... etc ...
+  console.log("Pré-chargement des images...");
+  try {
+    imgLabo = loadImage("Labo_1.png")
+    imgCarte = loadImage("carte.png");
+    imgAlgueVerte = loadImage("algue_verte_1.png");
+    imgAlgueRouge = loadImage("algue_rouge_1.png");
+    imgAlgueViolette = loadImage("algue_violette_1.png");
+    console.log("Images chargées avec succès !");
+  } catch (error) {
+    console.error("Erreur lors du chargement des images:", error);
+    // Tu pourrais afficher un message d'erreur à l'utilisateur ici
+  }
 }
-*/
+// ------------------------------------------------------
 
-// -----------------------------------------------------------------------------
-// --- SETUP ---
-// -----------------------------------------------------------------------------
 function setup() {
   createCanvas(windowWidth, windowHeight);
   ellipseMode(CENTER);
   textAlign(CENTER, CENTER);
   textSize(LABEL_TEXT_SIZE);
   rectMode(CENTER); // Utile pour les labels
+  imageMode(CORNER); // Mode par défaut, mais bon à savoir pour positionner les images (coin sup gauche)
 
   // Définir les propriétés des 3 cercles de la carte (écran 1)
   mapCircles = [
@@ -99,10 +97,10 @@ function setup() {
   backButton = createButton('Retour'); // Retour du Labo au Menu, ou du Test au Labo
 
   // --- ASSOCIER LES FONCTIONS AUX CLICS ---
-  passTurnButton.mousePressed(updateSeaweedGrowth); // Correction typo: update et pas udpdate
+  passTurnButton.mousePressed(updateSeaweedGrowth);
   resetButton.mousePressed(resetTargetColor);
-  testButton.mousePressed(goToTestResultsScreen); // Fonction pour aller à l'écran 3
-  backButton.mousePressed(handleBackButton); // Fonction unique pour gérer le retour
+  testButton.mousePressed(goToTestResultsScreen);
+  backButton.mousePressed(handleBackButton);
 
   // --- POSITIONNER ET STYLER LES BOUTONS ---
   styleActionButtons();
@@ -116,29 +114,51 @@ function setup() {
   console.log("Setup terminé. Écran actuel :", currentScreen);
 }
 
-// -----------------------------------------------------------------------------
-// --- DRAW (Boucle principale) ---
-// -----------------------------------------------------------------------------
 function draw() {
-  background('#d3d3d3'); // Gris clair
+  background('#d3d3d3'); // Gris clair - Fond général
 
   // Afficher l'écran approprié
   if (currentScreen === 1) {
     menuScreen();
   } else if (currentScreen === 2) {
-    laboSreen();
+    laboSreen(); // Appel de la fonction modifiée
   } else if (currentScreen === 3) {
     testResultScreen(); // Afficher l'écran de résultats
   }
   // Ajouter d'autres écrans si nécessaire
 }
 
-// -----------------------------------------------------------------------------
-// --- FONCTIONS D'AFFICHAGE DES ÉCRANS ---
-// -----------------------------------------------------------------------------
-
 // --- Fonction pour dessiner l'écran 1 (Menu) ---
 function menuScreen() {
+
+    // --- AJOUT : Affichage des images chargées ---
+  // Vérifier si les images sont bien chargées avant de les dessiner
+  let imgSize = 50;
+  let imgPadding = 10; // Espace entre les images
+  // Position de départ pour les images (ajuste selon tes besoins)
+  let startX = width * 0.1; // Sur la gauche
+  let startY = height - imgSize - imgPadding * 4; // En bas
+
+  if (imgLabo) {
+    image(imgLabo, 0, 0, 1537.04, 865);
+  }
+
+  // Dessine les algues en 50x50, les unes à côté des autres
+  startX += imgSize + imgPadding; // Décale pour la suivante
+  if (imgAlgueVerte) {
+    image(imgAlgueVerte, 50, 50, 500, 500);
+  }
+
+  startX += imgSize + imgPadding; // Décale
+  if (imgAlgueRouge) {
+    image(imgAlgueRouge, 0, 0, 500, 500);
+  }
+
+  startX += imgSize + imgPadding; // Décale
+  if (imgAlgueViolette) {
+    image(imgAlgueViolette, 0, 0, 500, 500);
+  }
+
   // Afficher la carte
   mapScreen(); // Dessine les cercles de la carte
 
@@ -156,17 +176,24 @@ function menuScreen() {
   textSize(LABEL_TEXT_SIZE); // Rétablir la taille par défaut
 }
 
-// --- Fonction pour dessiner l'écran 2 (Labo) ---
+// --- MODIFICATION : Fonction pour dessiner l'écran 2 (Labo) ---
 function laboSreen() {
+  // Option 1: Si "cart.png" est le FOND SPÉCIFIQUE de cet écran
+  // Décommente la ligne suivante si tu veux remplacer le fond gris par l'image cart.png
+  // if (imgCart) {
+  //   image(imgCart, 0, 0, width, height); // Dessine l'image en fond d'écran
+  // } else {
+  //   background(200); // Un fond alternatif si l'image ne charge pas
+  // }
+  
   // Dessiner le cercle cible (droite)
   fill(currentTargetColor);
   stroke(0);
   strokeWeight(1);
   ellipse(targetCirclePos.x, targetCirclePos.y, TARGET_CIRCLE_DIAMETER, TARGET_CIRCLE_DIAMETER);
   noStroke();
-  fill(0);
+  fill(0); // Texte noir par défaut
   text("Cible (max 2)", targetCirclePos.x, targetCirclePos.y - TARGET_CIRCLE_DIAMETER / 2 - 15);
-
 
   // Dessiner les cercles éléments (gauche) et leurs labels
   let radius = ELEMENT_CIRCLE_DIAMETER / 2;
@@ -188,7 +215,6 @@ function laboSreen() {
       let rectHeight = LABEL_TEXT_SIZE + LABEL_PADDING;
       fill(255, 220); // Blanc semi-transparent
       noStroke();
-      // rectMode(CENTER) est défini dans setup
       rect(circle.currentPos.x, labelY, rectWidth, rectHeight, 5); // Rectangle arrondi
       fill(0); // Texte noir
       textAlign(CENTER, CENTER);
@@ -196,8 +222,12 @@ function laboSreen() {
       text(textContent, circle.currentPos.x, labelY);
     }
   }
+
+  // ----------------------------------------------
+
   // Les boutons p5.dom sont gérés par p5.js (positionnés dans styleActionButtons)
 }
+
 
 // --- Fonction pour dessiner l'écran 3 (Résultats du Test) ---
 function testResultScreen() {
@@ -239,10 +269,6 @@ function mapScreen() {
     text(mapCircle.name, mapCircle.pos.x, mapCircle.pos.y);
   }
 }
-
-// -----------------------------------------------------------------------------
-// --- FONCTIONS UTILITAIRES (Boutons, Positions, Couleurs) ---
-// -----------------------------------------------------------------------------
 
 // --- Fonction pour styler et positionner les boutons ---
 function styleActionButtons() {
@@ -314,8 +340,8 @@ function initializePositions() {
   // --- Écran 2: Cercles éléments (Labo) ---
   // Positionnés en carré à gauche
   let squareCenterX = width / 4;
-  let squareCenterY = height / 2;
-  let squareSpacing = ELEMENT_CIRCLE_DIAMETER * 0.9; // Un peu plus espacé
+  let squareCenterY = height / 2 * 0.8; // Un peu plus haut pour laisser de la place en bas
+  let squareSpacing = ELEMENT_CIRCLE_DIAMETER * 0.9;
   let elementPositions = [
     createVector(squareCenterX - squareSpacing, squareCenterY - squareSpacing), // Haut Gauche
     createVector(squareCenterX + squareSpacing, squareCenterY - squareSpacing), // Haut Droite
@@ -325,28 +351,23 @@ function initializePositions() {
   for (let i = 0; i < elementCircles.length; i++) {
     let circle = elementCircles[i];
     circle.initialPos.set(elementPositions[i]);
-    // Ne réinitialiser la position que si on n'est pas en train de glisser
     if (!circle.isDragging) {
       circle.currentPos.set(circle.initialPos);
     }
   }
 
   // --- Écran 2: Cercle cible (Labo) ---
-  // Positionné à droite
-  targetCirclePos = createVector(width * 3 / 4, height / 2);
+  targetCirclePos = createVector(width * 3 / 4, height / 2); // Centré verticalement
 
   // --- Écran 1: Cercles carte (Menu) ---
-  // Positionnés en triangle au centre-gauche
-  let mapCenterX = width / 3; // Décalé vers la gauche
+  let mapCenterX = width / 3;
   let mapCenterY = height / 2;
-  let mapRadius = min(width, height) / 5; // Rayon pour disposer les 3 cercles
+  let mapRadius = min(width, height) / 5;
   for (let i = 0; i < mapCircles.length; i++) {
-    let angle = TWO_PI / mapCircles.length * i - HALF_PI; // Répartir en cercle, commencer en haut
+    let angle = TWO_PI / mapCircles.length * i - HALF_PI;
     let x = mapCenterX + cos(angle) * mapRadius;
     let y = mapCenterY + sin(angle) * mapRadius;
     mapCircles[i].pos.set(x, y);
-    // Optionnel: Réinitialiser la taille si besoin
-    // mapCircles[i].currentDiameter = MAP_CIRCLE_BASE_DIAMETER;
   }
 }
 
@@ -362,10 +383,10 @@ function updateTargetColor() {
 }
 
 function resetTargetColor() {
-  if (currentScreen === 2) { // Action possible seulement dans le Labo
-    targetStoredColors = []; // Vider le tableau des couleurs
-    targetStoredNames = []; // Vider aussi le tableau des noms
-    updateTargetColor(); // Mettre à jour la couleur affichée (devient blanc)
+  if (currentScreen === 2) {
+    targetStoredColors = [];
+    targetStoredNames = [];
+    updateTargetColor();
     console.log("Cible vidée.");
   }
 }
@@ -373,24 +394,14 @@ function resetTargetColor() {
 // --- Fonction pour appliquer l'effet du test (appelée depuis l'écran 3) ---
 function applyTestEffect(targetMapCircle, data) {
   if (!targetMapCircle || !data) return;
-
   console.log(`Application du test sur ${targetMapCircle.name} avec : ${data.names.join(' + ')}`);
-
-  // Logique d'interaction spécifique: Zinc sur Zone Verte
   if (data.names.includes("Zinc") && targetMapCircle.name === "Zone Verte") {
     console.log("Effet spécial: Zinc sur Zone Verte ! Augmentation de taille.");
-    targetMapCircle.currentDiameter = min(targetMapCircle.currentDiameter + 50, width/2); // Augmenter la taille (avec limite)
-  }
-  // Ajouter d'autres interactions ici
-  // else if (data.names.includes("Cuivre") && targetMapCircle.name === "Zone Rouge") { ... }
-  else {
+    targetMapCircle.currentDiameter = min(targetMapCircle.currentDiameter + 50, width/2);
+  } else {
       console.log("Aucun effet spécial défini pour cette combinaison.");
   }
 }
-
-// -----------------------------------------------------------------------------
-// --- FONCTIONS DE NAVIGATION / CHANGEMENT D'ÉCRAN ---
-// -----------------------------------------------------------------------------
 
 function goToLaboScreen() {
   currentScreen = 2;
@@ -400,111 +411,85 @@ function goToLaboScreen() {
 
 function goToMenuScreen() {
   currentScreen = 1;
-  resetTargetColor(); // Vider la cible en quittant le labo
+  resetTargetColor();
   updateButtonVisibility();
   console.log("Transition vers Écran 1: Menu");
 }
 
 function goToTestResultsScreen() {
-  if (currentScreen === 2) { // Ne peut être appelé que depuis le Labo
-    if (targetStoredColors.length > 0) { // Ne transférer que s'il y a quelque chose
-      // Copier les données actuelles pour le test
+  if (currentScreen === 2) {
+    if (targetStoredColors.length > 0) {
       testData = {
-        colors: [...targetStoredColors], // Copie des couleurs
-        names: [...targetStoredNames]    // Copie des noms
+        colors: [...targetStoredColors],
+        names: [...targetStoredNames]
       };
       currentScreen = 3;
       updateButtonVisibility();
       console.log("Transition vers Écran 3: Test avec", testData.names);
     } else {
-      console.log("Cible vide. Ajoutez des éléments avant de tester."); // Message si la cible est vide
+      console.log("Cible vide. Ajoutez des éléments avant de tester.");
     }
   }
 }
 
-// Gère le clic sur le bouton "Retour"
 function handleBackButton() {
-  if (currentScreen === 2) { // Si on est dans le Labo -> Retour au Menu
+  if (currentScreen === 2) {
     goToMenuScreen();
-  } else if (currentScreen === 3) { // Si on est sur l'écran Test -> Retour au Labo
-    currentScreen = 2; // Retourne simplement au labo sans reset
-    testData = null; // Effacer les données du test précédent
+  } else if (currentScreen === 3) {
+    currentScreen = 2;
+    testData = null;
     updateButtonVisibility();
     console.log("Transition retour vers Écran 2: Labo");
   }
 }
 
-
-// -----------------------------------------------------------------------------
-// --- FONCTIONS DE GESTION DES INTERACTIONS UTILISATEUR ---
-// -----------------------------------------------------------------------------
-
 function mousePressed() {
-  // --- Interaction Écran 1 (Menu) ---
   if (currentScreen === 1) {
-    // Vérifier clic sur le "bouton" dessiné pour aller au Labo
     let d = dist(mouseX, mouseY, laboCircleX, laboCircleY);
     if (d < LABO_CIRCLE_DIAMETER / 2) {
       goToLaboScreen();
-      return; // Important: ne pas vérifier autre chose si on a cliqué ici
+      return;
     }
-    // Ici, tu pourrais ajouter des interactions avec la carte si nécessaire
-  }
-
-  // --- Interaction Écran 2 (Labo) ---
-  else if (currentScreen === 2) {
-    // Vérifier le début du glisser-déposer des cercles éléments
-    // (p5.dom gère les clics sur les boutons créés avec createButton)
-    draggedCircleIndex = -1; // Réinitialiser
-    // Parcourir en sens inverse pour prioriser les cercles du dessus
+  } else if (currentScreen === 2) {
+    draggedCircleIndex = -1;
     for (let i = elementCircles.length - 1; i >= 0; i--) {
       let circle = elementCircles[i];
       let distance = dist(mouseX, mouseY, circle.currentPos.x, circle.currentPos.y);
       if (distance < circle.diameter / 2) {
-        // Commencer le drag SI la souris est bien SUR le cercle
         circle.isDragging = true;
         draggedCircleIndex = i;
-        // Calculer l'offset entre le clic et le centre du cercle
         dragOffsetX = mouseX - circle.currentPos.x;
         dragOffsetY = mouseY - circle.currentPos.y;
         console.log("Dragging started:", circle.name);
-        break; // Arrêter dès qu'un cercle est trouvé
+        break;
       }
     }
   }
-  // --- Interactions autres écrans ---
-  // else if (currentScreen === 3) { ... }
 }
 
 function mouseDragged() {
-  // Gérer le glissement SI on est sur l'écran Labo ET qu'un cercle est sélectionné
   if (currentScreen === 2 && draggedCircleIndex !== -1) {
     let circle = elementCircles[draggedCircleIndex];
-    // Mettre à jour la position du cercle pour suivre la souris, en tenant compte de l'offset
     circle.currentPos.x = mouseX - dragOffsetX;
     circle.currentPos.y = mouseY - dragOffsetY;
   }
 }
 
 function mouseReleased() {
-  // Gérer le relâchement SI on était en train de glisser sur l'écran Labo
   if (currentScreen === 2 && draggedCircleIndex !== -1) {
     let circle = elementCircles[draggedCircleIndex];
     console.log("Dragging stopped:", circle.name);
     circle.isDragging = false;
 
-    // Vérifier la collision avec la cible
     let distToTarget = dist(circle.currentPos.x, circle.currentPos.y, targetCirclePos.x, targetCirclePos.y);
 
-    if (distToTarget < TARGET_CIRCLE_DIAMETER / 2 + circle.diameter / 2) { // Collision détectée
+    if (distToTarget < TARGET_CIRCLE_DIAMETER / 2 + circle.diameter / 2) {
       console.log("Dropped", circle.name, "on target");
-      // Ajouter couleur et nom si possible (max 2 et pas de doublon)
       if (targetStoredColors.length < 2) {
-        // Vérifier si le nom n'est pas déjà présent
         if (!targetStoredNames.includes(circle.name)) {
           targetStoredColors.push(circle.color);
           targetStoredNames.push(circle.name);
-          updateTargetColor(); // Mettre à jour la couleur affichée de la cible
+          updateTargetColor();
           console.log("Added", circle.name, "to target. Current target:", targetStoredNames);
         } else {
           console.log(circle.name, "is already in the target.");
@@ -512,16 +497,11 @@ function mouseReleased() {
       } else {
         console.log("Target is full (max 2 elements).");
       }
-      // Ramener le cercle à sa position initiale après le drop sur la cible
       circle.currentPos.set(circle.initialPos);
-
     } else {
-      // Si relâché ailleurs, ramener simplement à la position initiale
       console.log("Dropped", circle.name, "outside target.");
       circle.currentPos.set(circle.initialPos);
     }
-
-    // Réinitialiser l'index du cercle glissé
     draggedCircleIndex = -1;
   }
 }
@@ -529,31 +509,19 @@ function mouseReleased() {
 // --- Fonction pour gérer le redimensionnement de la fenêtre ---
 function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
-  // Recalculer toutes les positions qui dépendent de la taille
   initializePositions();
-  // Repositionner les boutons p5.dom
   styleActionButtons();
-  // Assurer que la visibilité est correcte (au cas où)
   updateButtonVisibility();
   console.log("Window resized");
 }
-
-// -----------------------------------------------------------------------------
-// --- FONCTIONS LIÉES À LA LOGIQUE DU JEU (Tour par tour, etc.) ---
-// -----------------------------------------------------------------------------
 
 // --- Fonction appelée par le bouton "Passer le tour" (Écran 1) ---
 function updateSeaweedGrowth() {
   if (currentScreen === 1) {
       console.log("Passing turn, updating seaweed growth...");
-      // Augmenter le diamètre des cercles de la carte
       for (let i = 0; i < mapCircles.length; i++) {
         let mapCircle = mapCircles[i];
         mapCircle.currentDiameter += mapCircle.growthSpeed;
-        // Ajouter une limite de taille si nécessaire
-        // mapCircle.currentDiameter = min(mapCircle.currentDiameter, maxDiameter);
       }
-      // Ici tu pourrais ajouter d'autres logiques de fin de tour
-      // comme l'évolution de l'environnement, etc.
   }
 }
