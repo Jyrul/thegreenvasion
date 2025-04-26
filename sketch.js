@@ -1,6 +1,9 @@
 // Variable pour savoir quel écran afficher
 let currentScreen = 1;
 
+// Variable tour par tour
+let nbrTurn;
+
 // Diamètres des cercles
 const ELEMENT_CIRCLE_DIAMETER = 100;
 const TARGET_CIRCLE_DIAMETER = 150;
@@ -24,24 +27,31 @@ let draggedCircleIndex = -1;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
 
-// Constantes pour les labels
-const LABEL_TEXT_SIZE = 16;
-const LABEL_PADDING = 8;
 
-// Variables pour les boutons (écran 2)
+//////  Bouton  //////
+
+// Écran 1
+let passTurnButton;
+
+// Écran 2
 let resetButton;
 let testButton;
 
-// Variables pour les boutons (écran 2 & 3)
+// Écran 2 & 3
 let backButton;
 
 // Variable pour stocker les données à tester sur l'écran 3
 let testData = null; // Sera { colors: [...], names: [...] }
 
+// Constantes pour les labels
+const LABEL_TEXT_SIZE = 16;
+const LABEL_PADDING = 8;
+
 // Variable check
 let ifSolutionIsTest = false;
 let ifPreloadLaboScreen = false;
 let ifPreloadMapScreen = false;
+let ifPreloadMenuScreen = true;
 
 // Variables pour les cercles de l'écran 2 (Map)
 let mapCircles = [];
@@ -69,6 +79,11 @@ function setup() {
     { name: "Azote", color: color(0, 128, 128), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // #008080
     { name: "Soufre", color: color(176, 196, 222), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }  // #B0C4DE
   ];
+
+  
+
+  // Positionner et styler les boutons
+  styleActionButtons();
 }
 
 
@@ -119,6 +134,36 @@ function draw() {
       backButton.show();
     }
   }
+}
+
+// --- Fonction pour dessiner l'écran 3 (Labo) ---
+function preloadMapScreen() {
+  ellipseMode(CENTER);
+  textAlign(CENTER, CENTER);
+  textSize(LABEL_TEXT_SIZE);
+  
+  // Initialiser/calculer les positions des cercles dans la Map
+  initializePositions();
+
+  // Calculer la couleur initiale de la cible (blanc)
+  updateTargetColor();
+
+  // Créer les boutons
+  passTurnButton = createButton('Vider');
+  resetButton = createButton('Vider');
+  testButton = createButton('Faire tester');
+  backButton = createButton('Retour'); // Création du nouveau bouton
+
+  // Positionner et styler les boutons
+  styleActionButtons();
+
+  // Associer les fonctions aux clics
+  resetButton.mousePressed(resetTargetColor);
+  testButton.mousePressed(prepareColorTest); // Associer la nouvelle fonction
+  backButton.mousePressed(goBackView);
+
+  //Faire en sorte que ça ne se charge qu'une fois
+  ifPreloadMapScreen = false;
 }
 
 // --- Fonction pour dessiner l'écran 1 (Labo) ---
@@ -267,7 +312,7 @@ function mapScreen() {
 
 // --- Fonction pour styler et positionner les boutons ---
 function styleActionButtons() {
-  if (!resetButton || !testButton || !backButton) return; // Sécurité
+  if (!resetButton || !testButton || !backButton || passTurnButton) return; // Sécurité
 
   // Positionnement DYNAMIQUE basé sur la position de la cible
   let commonY = targetCirclePos.y + TARGET_CIRCLE_DIAMETER / 2 + 30; // Y commun sous la cible
@@ -521,6 +566,13 @@ function windowResized() {
   initializePositions();
   // Pas besoin de rappeler updateTargetColor ici.
   // Le repositionnement des boutons est géré dans initializePositions via styleActionButtons.
+}
+
+
+//////  Tour par tour  //////
+
+function udpdate() {
+  
 }
 
 // Supprimer la fonction vide "name(params)"
