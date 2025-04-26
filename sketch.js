@@ -150,17 +150,17 @@ function preloadMenuScreen() {
   textAlign(CENTER, CENTER);
   textSize(LABEL_TEXT_SIZE);
 
-  // Créer les boutons
-  passTurnButton = createButton('Passer le tour');
-  resetButton = createButton('Vider');
-  testButton = createButton('Faire tester');
-  backButton = createButton('Retour'); // Création du nouveau bouton
-
   // Initialiser/calculer les positions des cercles dans la Map
   initializePositions();
 
   // Calculer la couleur initiale de la cible (blanc)
   updateTargetColor();
+
+  // Créer les boutons
+  passTurnButton = createButton('Passer le tour');
+  resetButton = createButton('Vider');
+  testButton = createButton('Faire tester');
+  backButton = createButton('Retour'); // Création du nouveau bouton
 
   // Positionner et styler les boutons
   styleActionButtons();
@@ -202,6 +202,7 @@ function preloadLaboScreen() {
   updateTargetColor();
 
   // Créer les boutons
+  passTurnButton = createButton('Passer le tour');
   resetButton = createButton('Vider');
   testButton = createButton('Faire tester');
   backButton = createButton('Retour'); // Création du nouveau bouton
@@ -210,9 +211,10 @@ function preloadLaboScreen() {
   styleActionButtons();
 
   // Associer les fonctions aux clics
+  passTurnButton.mousePressed(udpdateSeaweedGrowth);
   resetButton.mousePressed(resetTargetColor);
-  testButton.mousePressed(prepareColorTest); // Associer la nouvelle fonction
-  backButton.mousePressed(goBackView);
+  testButton.mousePressed(prepareColorTest);
+  backButton.mousePressed(goBackView); // Associer la nouvelle fonction
 
   //Faire en sorte que ça ne se charge qu'une fois
   ifPreloadLaboScreen = false;
@@ -299,12 +301,13 @@ function styleActionButtons() {
   passTurnButton.position(passTurnButtonX, passTurnButtonY); // Ajustement pour aligner à droite du centre  
 
   // Style commun (optionnel)
-  [resetButton, testButton, backButton].forEach(button => {
+  [resetButton, testButton, backButton, passTurnButton].forEach(button => {
       button.style('padding', '10px');
       button.style('font-size', '16px');
       button.style('cursor', 'pointer');
       // Initialement, cacher les boutons s'ils ne doivent pas être visibles
       if (currentScreen == 2){
+        passTurnButton.hide();
         resetButton.show();
         testButton.show();
         backButton.show();
