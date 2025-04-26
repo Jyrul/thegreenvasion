@@ -76,7 +76,7 @@ function setup() {
 function draw() {
   background('#d3d3d3');
 
-  // Afficher l'écran actuel
+  // Menu
   if (currentScreen === 1) {
     menuScreen();
     // S'assurer que les boutons sont visibles (au cas où on reviendrait à l'écran 1)
@@ -86,6 +86,7 @@ function draw() {
         backButton.hide();
     }
   
+  //Labo  
   } else if (currentScreen === 2) {
     //Charger la vue
     if(ifPreloadLaboScreen == true){
@@ -101,8 +102,17 @@ function draw() {
       backButton.show();
   }
   
-} else if (currentScreen === 3) {
+  //Map
+  } else if (currentScreen === 3) {
+    //Charger la vue
+    if(ifPreloadMapScreen == true){
+      preloadMapScreen();
+    }    
+
+    //Afficher la vue
     mapScreen();
+
+    // S'assurer que les boutons sont visibles (au cas où on reviendrait à l'écran 3)    
     if (resetButton && testButton && backButton) {
       resetButton.hide();
       testButton.hide();
@@ -182,6 +192,7 @@ function laboSreen() {
   // Les boutons sont gérés par draw() et p5.dom
 }
 
+// --- Fonction pour dessiner l'écran 3 (Labo) ---
 function preloadMapScreen() {
   ellipseMode(CENTER);
   textAlign(CENTER, CENTER);
@@ -194,13 +205,17 @@ function preloadMapScreen() {
   updateTargetColor();
 
   // Créer les boutons
+  resetButton = createButton('Vider');
+  testButton = createButton('Faire tester');
   backButton = createButton('Retour'); // Création du nouveau bouton
 
   // Positionner et styler les boutons
   styleActionButtons();
 
   // Associer les fonctions aux clics
-  backButton.mousePressed(goBackView);// Associer la nouvelle fonction
+  resetButton.mousePressed(resetTargetColor);
+  testButton.mousePressed(prepareColorTest); // Associer la nouvelle fonction
+  backButton.mousePressed(goBackView);
 
   //Faire en sorte que ça ne se charge qu'une fois
   ifPreloadMapScreen = false;
@@ -208,6 +223,10 @@ function preloadMapScreen() {
 
 // --- Fonction pour dessiner l'écran 3 (Map) ---
 function mapScreen() {
+  ellipseMode(CENTER);
+  textAlign(CENTER, CENTER);
+  textSize(LABEL_TEXT_SIZE);
+
   // 2) Dessiner les 3 cercles de la carte
   for (let i = 0; i < mapCircles.length; i++) {
       let mapCircle = mapCircles[i];
@@ -239,7 +258,7 @@ function mapScreen() {
       fill(0);
       textSize(20);
       textAlign(CENTER, TOP);
-      text("Retournez au labo (flèches) pour créer une combinaison.", width / 2, 20);
+      text("Retournez au labo pour créer une combinaison.", width / 2, 20);
   }
 }
 
@@ -327,7 +346,8 @@ function initializePositions() {
 // --- Retourner dans la scène principale
 function goBackView() {
   currentScreen = 1;
-  targetStoredColors = [];
+  ifSolutionIsTest = false;
+  resetTargetColor();
 }
 
 
