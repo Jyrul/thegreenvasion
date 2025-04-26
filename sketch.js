@@ -128,9 +128,9 @@ function draw() {
   background('#d3d3d3');
 
   if (currentScreen === 1) {
-    drawScreen1();
+    laboSreen();
   } else if (currentScreen === 2) {
-    drawScreen2();
+    mapScreen();
   }
 }
 
