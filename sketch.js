@@ -16,6 +16,11 @@ let laboCircleX, laboCircleY, mapCircleX, mapCircleY;
 // Tableau pour stocker les infos des cercles éléments (gauche - écran 1)
 let elementCircles = [];
 
+// Images
+let purpleSeaweed0, purpleSeaweed10, purpleSeaweed20, purpleSeaweed30, purpleSeaweed40, purpleSeaweed50, purpleSeaweed60, purpleSeaweed70, purpleSeaweed80, purpleSeaweed90, purpleSeaweed100; 
+let redSeaweed0, redSeaweed10, redSeaweed20, redSeaweed30, redSeaweed40, redSeaweed50, redSeaweed60, redSeaweed70, redSeaweed80, redSeaweed90, redSeaweed100;
+let greenSeaweed0, greenSeaweed10, greenSeaweed20, greenSeaweed30, greenSeaweed40, greenSeaweed50, greenSeaweed60, greenSeaweed70, greenSeaweed80, greenSeaweed90, greenSeaweed100;
+
 // Variables pour le cercle cible (droite - écran 2)
 let targetCirclePos;
 let targetStoredColors = []; // Stocke les objets color p5.js déposés (max 2)
@@ -48,15 +53,32 @@ const LABEL_TEXT_SIZE = 16;
 const LABEL_PADDING = 8;
 
 // Variable check
-let ifSolutionIsTest = false;
 let ifPreloadLaboScreen = false;
-let ifPreloadMapScreen = false;
 let ifPreloadMenuScreen = true;
 
 // Variables pour les cercles de l'écran 2 (Map)
 let mapCircles = [];
 const MAP_CIRCLE_BASE_DIAMETER = 120;
 
+/*
+function preload() {
+  //Image Algues Violette
+  purpleSeaweed10 = loadImage("/Algue_Violette/algue_rouge_1.png"); 
+  purpleSeaweed20 = loadImage("/Algue_Violette/algue_rouge_2.png"); 
+  purpleSeaweed30 = loadImage("/Algue_Violette/algue_rouge_3.png"); 
+  purpleSeaweed40 = loadImage("/Algue_Violette/algue_rouge_4.png"); 
+  purpleSeaweed50 = loadImage("/Algue_Violette/algue_rouge_5.png"); 
+  purpleSeaweed60 = loadImage("/Algue_Violette/algue_rouge_6.png"); 
+  purpleSeaweed70 = loadImage("/Algue_Violette/algue_rouge_7.png"); 
+  purpleSeaweed80 = loadImage("/Algue_Violette/algue_rouge_8.png"); 
+  purpleSeaweed90 = loadImage("/Algue_Violette/algue_rouge_9.png"); 
+  purpleSeaweed100 = loadImage("/Algue_Violette/algue_rouge_10.png"); 
+  
+
+  //Images Algues Rouge
+  redSeaweed0
+}
+*/
 
 // --- Fonction setup() ---
 function setup() {
@@ -64,9 +86,9 @@ function setup() {
 
   // Définir les propriétés des 3 cercles de la carte (écran 2)
   mapCircles = [
-    { name: "Zone Verte", color: color(0, 150, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }, // Vert
-    { name: "Zone Rouge", color: color(200, 0, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }, // Rouge
-    { name: "Zone Bleue", color: color(0, 0, 200), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }  // Bleu
+    { name: "Zone Verte", color: color(0, 150, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER, growthSpeed: 6}, // Vert
+    { name: "Zone Rouge", color: color(200, 0, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER, growthSpeed: 9 }, // Rouge
+    { name: "Zone Bleue", color: color(0, 0, 200), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER, growthSpeed: 13 }  // Bleu
   ];
 
   // Initialiser/calculer les positions des cercles dans la Map
@@ -80,8 +102,6 @@ function setup() {
     { name: "Soufre", color: color(176, 196, 222), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }  // #B0C4DE
   ];
 
-  
-
   // Positionner et styler les boutons
   styleActionButtons();
 }
@@ -93,6 +113,11 @@ function draw() {
 
   // Menu
   if (currentScreen === 1) {
+    //Charger la vue
+    if(ifPreloadLaboScreen == true){
+      preloadLaboScreen();
+    }  
+    
     menuScreen();
     // S'assurer que les boutons sont visibles (au cas où on reviendrait à l'écran 1)
     if (resetButton && testButton && backButton) {
@@ -115,69 +140,53 @@ function draw() {
       resetButton.show();
       testButton.show();
       backButton.show();
-  }
-  
-  //Map
-  } else if (currentScreen === 3) {
-    //Charger la vue
-    if(ifPreloadMapScreen == true){
-      preloadMapScreen();
-    }    
-
-    //Afficher la vue
-    mapScreen();
-
-    // S'assurer que les boutons sont visibles (au cas où on reviendrait à l'écran 3)    
-    if (resetButton && testButton && backButton) {
-      resetButton.hide();
-      testButton.hide();
-      backButton.show();
     }
   }
 }
 
-// --- Fonction pour dessiner l'écran 3 (Labo) ---
-function preloadMapScreen() {
+// --- Fonction pour dessiner l'écran 3 (Map) ---
+function preloadMenuScreen() {
   ellipseMode(CENTER);
   textAlign(CENTER, CENTER);
   textSize(LABEL_TEXT_SIZE);
-  
+
+  // Créer les boutons
+  passTurnButton = createButton('Passer le tour');
+  resetButton = createButton('Vider');
+  testButton = createButton('Faire tester');
+  backButton = createButton('Retour'); // Création du nouveau bouton
+
   // Initialiser/calculer les positions des cercles dans la Map
   initializePositions();
 
   // Calculer la couleur initiale de la cible (blanc)
   updateTargetColor();
 
-  // Créer les boutons
-  passTurnButton = createButton('Vider');
-  resetButton = createButton('Vider');
-  testButton = createButton('Faire tester');
-  backButton = createButton('Retour'); // Création du nouveau bouton
-
   // Positionner et styler les boutons
   styleActionButtons();
 
   // Associer les fonctions aux clics
+  passTurnButton.mousePressed(udpdateSeaweedGrowth);
   resetButton.mousePressed(resetTargetColor);
-  testButton.mousePressed(prepareColorTest); // Associer la nouvelle fonction
-  backButton.mousePressed(goBackView);
+  testButton.mousePressed(prepareColorTest);
+  backButton.mousePressed(goBackView); // Associer la nouvelle fonction
 
   //Faire en sorte que ça ne se charge qu'une fois
-  ifPreloadMapScreen = false;
+  ifPreloadMenuScreen = false;
 }
 
 // --- Fonction pour dessiner l'écran 1 (Labo) ---
 function menuScreen() {
-  text("sovihsv", width/2, height/2)
   fill(0);
+  text("menu", width/2, height/2)
 
+  //Bouton pour changer de vue
   laboCircleX = 3*width/4;
   laboCircleY = height/2;
-  mapCircleX = width/4;
-  mapCircleY = height/2;
-  
   circle(laboCircleX, laboCircleY, LABO_CIRCLE_DIAMETER);
-  circle(mapCircleX, mapCircleY, MAP_CIRCLE_BASE_DIAMETER);
+
+  //Afficher la map
+  mapScreen();
 }
 
 // --- Charger la vue du labo ---
@@ -237,35 +246,6 @@ function laboSreen() {
   // Les boutons sont gérés par draw() et p5.dom
 }
 
-// --- Fonction pour dessiner l'écran 3 (Labo) ---
-function preloadMapScreen() {
-  ellipseMode(CENTER);
-  textAlign(CENTER, CENTER);
-  textSize(LABEL_TEXT_SIZE);
-  
-  // Initialiser/calculer les positions des cercles dans la Map
-  initializePositions();
-
-  // Calculer la couleur initiale de la cible (blanc)
-  updateTargetColor();
-
-  // Créer les boutons
-  resetButton = createButton('Vider');
-  testButton = createButton('Faire tester');
-  backButton = createButton('Retour'); // Création du nouveau bouton
-
-  // Positionner et styler les boutons
-  styleActionButtons();
-
-  // Associer les fonctions aux clics
-  resetButton.mousePressed(resetTargetColor);
-  testButton.mousePressed(prepareColorTest); // Associer la nouvelle fonction
-  backButton.mousePressed(goBackView);
-
-  //Faire en sorte que ça ne se charge qu'une fois
-  ifPreloadMapScreen = false;
-}
-
 // --- Fonction pour dessiner l'écran 3 (Map) ---
 function mapScreen() {
   ellipseMode(CENTER);
@@ -286,24 +266,6 @@ function mapScreen() {
       noStroke();
       textSize(LABEL_TEXT_SIZE);
       text(mapCircle.name, mapCircle.pos.x, mapCircle.pos.y);
-  }
-
-  // Indiquer à l'utilisateur s'il a une couleur à tester
-  if (testData !== null) {
-      fill(0);
-      textSize(20);
-      textAlign(CENTER, TOP);
-      text("Cliquez sur une zone pour tester la combinaison.", width / 2, 20);
-      // On pourrait afficher les noms des couleurs à tester
-      // text(`Test en cours: ${testData.names.join(' + ')}`, width / 2, 50);
-  } 
-
-  if (ifSolutionIsTest == true) {
-      // Message si aucune couleur n'est en cours de test
-      fill(0);
-      textSize(20);
-      textAlign(CENTER, TOP);
-      text("Retournez au labo pour créer une combinaison.", width / 2, 20);
   }
 }
 
@@ -331,22 +293,26 @@ function styleActionButtons() {
   let backButtonY = 9*height/10;
   backButton.position(backButtonX, backButtonY); // Ajustement pour aligner à droite du centre
 
+  // Positionner Tour Suivant
+  let passTurnButtonX = width/2;
+  let passTurnButtonY = 9*height/10;
+  passTurnButton.position(passTurnButtonX, passTurnButtonY); // Ajustement pour aligner à droite du centre  
+
   // Style commun (optionnel)
   [resetButton, testButton, backButton].forEach(button => {
       button.style('padding', '10px');
       button.style('font-size', '16px');
       button.style('cursor', 'pointer');
       // Initialement, cacher les boutons s'ils ne doivent pas être visibles
-      if (currentScreen == 3) {
-        resetButton.hide();
-        testButton.hide();
-        backButton.show();
-      } else if (currentScreen == 2){
+      if (currentScreen == 2){
         resetButton.show();
         testButton.show();
         backButton.show();
       } else {
-        button.hide();
+        passTurnButton.show();
+        resetButton.hide();
+        testButton.hide();
+        backButton.hide();
       }
   });
 }
@@ -446,11 +412,6 @@ function mousePressed() {
       currentScreen = 2;
       ifPreloadLaboScreen = true;
     }
-
-    if (dist(mouseX, mouseY, mapCircleX, mapCircleY) < MAP_CIRCLE_DIAMETER) {
-      currentScreen = 3;
-      ifPreloadMapScreen = true;
-    }
   }
 
   // --- Logique pour l'ÉCRAN 2: Glisser-déposer & Boutons ---
@@ -477,27 +438,6 @@ function mousePressed() {
         break;
       }
     }
-  }
-
-  // --- Logique pour l'ÉCRAN 3: Appliquer le test ---
-  else if (currentScreen === 3 && testData !== null) {
-      // Vérifier si on clique sur l'un des cercles de la carte
-      for (let i = 0; i < mapCircles.length; i++) {
-          let mapCircle = mapCircles[i];
-          let distance = dist(mouseX, mouseY, mapCircle.pos.x, mapCircle.pos.y);
-
-          if (distance < mapCircle.currentDiameter / 2) {
-
-              // Clic sur ce cercle ! Appliquer l'effet.
-              applyTestEffect(mapCircle, testData);
-              // Réinitialiser les données de test (le test est utilisé)
-              testData = null;
-              // On a tester donc on arrête le tuto
-              ifSolutionIsTest = true; 
-              // On a trouvé la cible, on arrête de chercher
-              break;
-          }
-      }
   }
 }
 
@@ -571,8 +511,13 @@ function windowResized() {
 
 //////  Tour par tour  //////
 
-function udpdate() {
-  
+function udpdateSeaweedGrowth() {
+  // Augmenter le diamètre du cercle par tour
+  for (let i = 0; i < mapCircles.length; i++) {
+    let mapCircle = mapCircles[i];
+    
+    mapCircle.currentDiameter += mapCircle.growthSpeed;
+  }
 }
 
 // Supprimer la fonction vide "name(params)"
