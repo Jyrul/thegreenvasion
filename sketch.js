@@ -5,15 +5,16 @@ let currentScreen = 1;
 const ELEMENT_CIRCLE_DIAMETER = 100;
 const TARGET_CIRCLE_DIAMETER = 150;
 
-// Tableau pour stocker les infos des cercles éléments (gauche)
+// Tableau pour stocker les infos des cercles éléments (gauche - écran 1)
 let elementCircles = [];
 
-// Variables pour le cercle cible (droite)
+// Variables pour le cercle cible (droite - écran 1)
 let targetCirclePos;
-let targetStoredColors = []; // Stocke les couleurs p5.js déposées (max 2)
+let targetStoredColors = []; // Stocke les objets color p5.js déposés (max 2)
+let targetStoredNames = []; // Stocke les noms correspondants
 let currentTargetColor; // La couleur affichée (mélange)
 
-// Variables pour gérer le glisser-déposer
+// Variables pour gérer le glisser-déposer (écran 1 uniquement)
 let draggedCircleIndex = -1;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
@@ -22,8 +23,16 @@ let dragOffsetY = 0;
 const LABEL_TEXT_SIZE = 16;
 const LABEL_PADDING = 8;
 
-// Variables pour le bouton Reset
-let resetButton; // On utilisera un bouton p5.dom
+// Variables pour les boutons (écran 1)
+let resetButton;
+let testButton; // Nouveau bouton "Faire tester"
+
+// Variable pour stocker les données à tester sur l'écran 2
+let testData = null; // Sera { colors: [...], names: [...] }
+
+// Variables pour les cercles de l'écran 2 (Map)
+let mapCircles = [];
+const MAP_CIRCLE_BASE_DIAMETER = 120;
 
 // --- Fonction setup() ---
 function setup() {
@@ -32,12 +41,19 @@ function setup() {
   textAlign(CENTER, CENTER);
   textSize(LABEL_TEXT_SIZE);
 
-  // Définir les propriétés des 4 cercles éléments
+  // Définir les propriétés des 4 cercles éléments (écran 1)
   elementCircles = [
     { name: "Zinc", color: color(128, 0, 128), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // Pourpre
     { name: "Cuivre", color: color(184, 115, 51), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // #B87333
     { name: "Azote", color: color(0, 128, 128), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // #008080
     { name: "Soufre", color: color(176, 196, 222), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }  // #B0C4DE
+  ];
+
+  // Définir les propriétés des 3 cercles de la carte (écran 2)
+  mapCircles = [
+      { name: "Zone Verte", color: color(0, 150, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }, // Vert
+      { name: "Zone Rouge", color: color(200, 0, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }, // Rouge
+      { name: "Zone Bleue", color: color(0, 0, 200), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }  // Bleu
   ];
 
   // Initialiser/calculer les positions
@@ -46,115 +62,165 @@ function setup() {
   // Calculer la couleur initiale de la cible (blanc)
   updateTargetColor();
 
-  // Créer le bouton Reset
+  // Créer les boutons
   resetButton = createButton('Vider');
-  // Positionner le bouton (sera fait dans initializePositions et windowResized)
-  styleResetButton(); // Appliquer style CSS si besoin
-  resetButton.mousePressed(resetTargetColor); // Associer la fonction au clic
+  testButton = createButton('Faire tester'); // Création du nouveau bouton
+
+  // Positionner et styler les boutons
+  styleActionButtons();
+
+  // Associer les fonctions aux clics
+  resetButton.mousePressed(resetTargetColor);
+  testButton.mousePressed(prepareColorTest); // Associer la nouvelle fonction
 }
 
-// --- Fonction pour styler et positionner le bouton ---
-function styleResetButton() {
-    if (!resetButton) return; // Sécurité si le bouton n'est pas encore créé
+// --- Fonction pour styler et positionner les boutons ---
+function styleActionButtons() {
+    if (!resetButton || !testButton) return; // Sécurité
 
     // Positionnement DYNAMIQUE basé sur la position de la cible
-    let buttonX = targetCirclePos.x; // Centré horizontalement avec la cible
-    let buttonY = targetCirclePos.y + TARGET_CIRCLE_DIAMETER / 2 + 30; // En dessous de la cible + marge
+    let commonY = targetCirclePos.y + TARGET_CIRCLE_DIAMETER / 2 + 30; // Y commun sous la cible
+    let spacing = 10; // Espace entre les boutons
 
-    resetButton.position(buttonX - resetButton.width / 2, buttonY - resetButton.height / 2); // position() prend le coin sup gauche
+    // Positionner Vider (à gauche)
+    let resetButtonX = targetCirclePos.x + resetButton.width / 4 + spacing / 4;
+    resetButton.position(resetButtonX, commonY - resetButton.height / 2);
 
-    // Style (optionnel, peut aussi être fait en CSS)
-    resetButton.style('padding', '10px');
-    resetButton.style('font-size', '16px');
-    resetButton.style('cursor', 'pointer');
+    // Positionner Faire tester (à droite)
+    let testButtonX = targetCirclePos.x + testButton.width / 2 + spacing / 2;
+    testButton.position(testButtonX - testButton.width, commonY - testButton.height / 2); // Ajustement pour aligner à droite du centre
+
+    // Style commun (optionnel)
+    [resetButton, testButton].forEach(button => {
+        button.style('padding', '10px');
+        button.style('font-size', '16px');
+        button.style('cursor', 'pointer');
+        // Initialement, cacher les boutons s'ils ne doivent pas être visibles
+        if (currentScreen !== 1) {
+            button.hide();
+        } else {
+            button.show();
+        }
+    });
 }
+
 
 // --- Fonction pour initialiser/réinitialiser les positions ---
 function initializePositions() {
+  // --- Écran 1: Cercles éléments ---
   let elementRadius = ELEMENT_CIRCLE_DIAMETER / 2;
-  let numElements = elementCircles.length;
-
-  // 1) Disposition en carré sur la moitié gauche
-  let squareCenterX = width / 4; // Centre X de la zone gauche
-  let squareCenterY = height / 2; // Centre Y de l'écran
-  let squareSpacing = ELEMENT_CIRCLE_DIAMETER * 0.8; // Espace entre les cercles et le centre du carré
-
-  // Calculer les 4 positions du carré
-  let positions = [
-    createVector(squareCenterX - squareSpacing, squareCenterY - squareSpacing), // Haut-Gauche
-    createVector(squareCenterX + squareSpacing, squareCenterY - squareSpacing), // Haut-Droit
-    createVector(squareCenterX - squareSpacing, squareCenterY + squareSpacing), // Bas-Gauche
-    createVector(squareCenterX + squareSpacing, squareCenterY + squareSpacing)  // Bas-Droit
+  let squareCenterX = width / 4;
+  let squareCenterY = height / 2;
+  let squareSpacing = ELEMENT_CIRCLE_DIAMETER * 0.8;
+  let elementPositions = [
+    createVector(squareCenterX - squareSpacing, squareCenterY - squareSpacing),
+    createVector(squareCenterX + squareSpacing, squareCenterY - squareSpacing),
+    createVector(squareCenterX - squareSpacing, squareCenterY + squareSpacing),
+    createVector(squareCenterX + squareSpacing, squareCenterY + squareSpacing)
   ];
-
-  // Assigner les positions aux cercles
-  for (let i = 0; i < numElements; i++) {
+  for (let i = 0; i < elementCircles.length; i++) {
     let circle = elementCircles[i];
-    circle.initialPos.set(positions[i]);
+    circle.initialPos.set(elementPositions[i]);
     if (!circle.isDragging) {
       circle.currentPos.set(circle.initialPos);
     }
   }
 
-  // Calculer la position du cercle cible (droite)
+  // --- Écran 1: Cercle cible ---
   targetCirclePos = createVector(width * 3 / 4, height / 2);
 
-  // Repositionner le bouton Reset après avoir recalculé targetCirclePos
-   styleResetButton();
+  // --- Écran 2: Cercles carte ---
+  let mapCenterX = width / 2;
+  let mapCenterY = height / 2;
+  let mapRadius = min(width, height) / 4; // Rayon pour disposer les 3 cercles
+  for(let i = 0; i < mapCircles.length; i++) {
+      let angle = TWO_PI / mapCircles.length * i - HALF_PI; // Répartir en cercle, commencer en haut
+      let x = mapCenterX + cos(angle) * mapRadius;
+      let y = mapCenterY + sin(angle) * mapRadius;
+      mapCircles[i].pos.set(x, y);
+      // Réinitialiser la taille si nécessaire (par exemple, si on quitte et revient)
+      // mapCircles[i].currentDiameter = MAP_CIRCLE_BASE_DIAMETER; // Décommenter si besoin
+  }
+
+
+  // Repositionner les boutons après avoir recalculé targetCirclePos
+  styleActionButtons();
 }
 
-// --- Fonction pour mettre à jour la couleur de la cible ---
+// --- Fonction pour mettre à jour la couleur de la cible (Écran 1) ---
 function updateTargetColor() {
   if (targetStoredColors.length === 0) {
     currentTargetColor = color(255); // Blanc
   } else if (targetStoredColors.length === 1) {
     currentTargetColor = targetStoredColors[0];
   } else { // 2 couleurs stockées
-    // Mélanger les deux couleurs avec lerpColor
     currentTargetColor = lerpColor(targetStoredColors[0], targetStoredColors[1], 0.5);
   }
 }
 
-// --- Fonction appelée par le bouton Reset ---
+// --- Fonction appelée par le bouton Reset (Écran 1) ---
 function resetTargetColor() {
-    targetStoredColors = []; // Vider le tableau
+    targetStoredColors = []; // Vider le tableau des couleurs
+    targetStoredNames = []; // Vider aussi le tableau des noms
     updateTargetColor(); // Mettre à jour la couleur affichée
 }
 
+// --- Fonction appelée par le bouton "Faire tester" (Écran 1) ---
+function prepareColorTest() {
+    if (targetStoredColors.length > 0) { // Ne transférer que s'il y a quelque chose
+        // Copier les données actuelles pour le test
+        testData = {
+            colors: [...targetStoredColors], // Copie des couleurs
+            names: [...targetStoredNames]   // Copie des noms
+        };
+        // Passer à l'écran 2
+        currentScreen = 2;
+        // Cacher les boutons de l'écran 1
+        resetButton.hide();
+        testButton.hide();
+    } else {
+        console.log("Aucune couleur à tester !"); // Message si la cible est vide
+    }
+}
 
 
 // --- Fonction draw() ---
 function draw() {
   background('#d3d3d3');
 
+  // Afficher l'écran actuel
   if (currentScreen === 1) {
     laboSreen();
+    // S'assurer que les boutons sont visibles (au cas où on reviendrait à l'écran 1)
+    if (resetButton && testButton) {
+        resetButton.show();
+        testButton.show();
+    }
   } else if (currentScreen === 2) {
     mapScreen();
+    // S'assurer que les boutons sont cachés
+     if (resetButton && testButton) {
+        resetButton.hide();
+        testButton.hide();
+    }
   }
 }
 
-
-
-// --- Fonction pour dessiner l'écran 1 ---
+// --- Fonction pour dessiner l'écran 1 (Labo) ---
 function laboSreen() {
-  // --- Dessiner le cercle cible (droite) ---
-  // 2) Utiliser la couleur calculée (initialement blanc)
+  // Dessiner le cercle cible (droite)
   fill(currentTargetColor);
-  stroke(0);
-  strokeWeight(1);
+  stroke(0); strokeWeight(1);
   ellipse(targetCirclePos.x, targetCirclePos.y, TARGET_CIRCLE_DIAMETER, TARGET_CIRCLE_DIAMETER);
 
-  // --- Dessiner les cercles éléments (gauche) et leurs labels ---
+  // Dessiner les cercles éléments (gauche) et leurs labels
   let radius = ELEMENT_CIRCLE_DIAMETER / 2;
   for (let i = 0; i < elementCircles.length; i++) {
     let circle = elementCircles[i];
     // Dessiner le cercle
-    fill(circle.color);
-    stroke(0);
-    strokeWeight(1);
+    fill(circle.color); stroke(0); strokeWeight(1);
     ellipse(circle.currentPos.x, circle.currentPos.y, circle.diameter, circle.diameter);
-    // Dessiner le label (code inchangé)
+    // Dessiner le label
     let labelY = circle.currentPos.y + radius + LABEL_PADDING + LABEL_TEXT_SIZE / 2;
     let textContent = circle.name;
     let textW = textWidth(textContent);
@@ -165,101 +231,165 @@ function laboSreen() {
     fill(0); textAlign(CENTER, CENTER); textSize(LABEL_TEXT_SIZE);
     text(textContent, circle.currentPos.x, labelY);
   }
-   // Le bouton est un élément HTML, p5 le dessine automatiquement
+  // Les boutons sont gérés par draw() et p5.dom
 }
 
-
-
-
-
-
-// --- Fonction pour dessiner l'écran 2 ---
+// --- Fonction pour dessiner l'écran 2 (Map) ---
 function mapScreen() {
-  fill(0); noStroke(); textSize(32); textAlign(CENTER, CENTER);
-  text("Écran 2", width / 2, height / 2);
+  // 2) Dessiner les 3 cercles de la carte
+  for (let i = 0; i < mapCircles.length; i++) {
+      let mapCircle = mapCircles[i];
+      fill(mapCircle.color);
+      stroke(0);
+      strokeWeight(1);
+      // Utiliser currentDiameter pour permettre le changement de taille
+      ellipse(mapCircle.pos.x, mapCircle.pos.y, mapCircle.currentDiameter, mapCircle.currentDiameter);
+
+      // Optionnel: Afficher le nom de la zone
+      fill(255); // Texte blanc
+      noStroke();
+      textSize(LABEL_TEXT_SIZE);
+      text(mapCircle.name, mapCircle.pos.x, mapCircle.pos.y);
+  }
+
+  // Indiquer à l'utilisateur s'il a une couleur à tester
+  if (testData !== null) {
+      fill(0);
+      textSize(20);
+      textAlign(CENTER, TOP);
+      text("Cliquez sur une zone pour tester la combinaison.", width / 2, 20);
+      // On pourrait afficher les noms des couleurs à tester
+      // text(`Test en cours: ${testData.names.join(' + ')}`, width / 2, 50);
+  } else {
+      // Message si aucune couleur n'est en cours de test
+      fill(0);
+      textSize(20);
+      textAlign(CENTER, TOP);
+      text("Retournez au labo (flèches) pour créer une combinaison.", width / 2, 20);
+  }
 }
-
-
-
-
-
 
 // --- Fonction keyPressed() ---
 function keyPressed() {
-  if (keyCode === RIGHT_ARROW || keyCode === LEFT_ARROW) {
-    currentScreen = (currentScreen === 1) ? 2 : 1;
+  // Permettre de changer d'écran SEULEMENT si on n'est pas en train de tester
+  if (testData === null && (keyCode === RIGHT_ARROW || keyCode === LEFT_ARROW)) {
+      currentScreen = (currentScreen === 1) ? 2 : 1;
+      // Gérer la visibilité des boutons lors du changement manuel
+      if (currentScreen === 1 && resetButton && testButton) {
+          resetButton.show();
+          testButton.show();
+      } else if (resetButton && testButton) {
+          resetButton.hide();
+          testButton.hide();
+      }
+  } else if (testData !== null && (keyCode === RIGHT_ARROW || keyCode === LEFT_ARROW)) {
+      console.log("Terminez le test avant de changer d'écran.");
   }
 }
 
-// --- Fonctions pour gérer le glisser-déposer ---
+// --- Fonctions pour gérer les interactions souris ---
 function mousePressed() {
-    // Important : Vérifier d'abord si on clique sur un bouton p5.dom existant
-    // Si on clique sur le bouton, p5.dom gère l'appel à resetTargetColor()
-    // et on ne veut PAS lancer un drag de cercle en même temps.
-    // On vérifie si la souris est SUR le bouton. Si oui, on ne fait rien ici.
-    let dButton = dist(mouseX, mouseY, resetButton.x + resetButton.width/2, resetButton.y + resetButton.height/2);
-     // Approximatif car position() est top-left, mais suffisant ici.
-    if (dButton < max(resetButton.width, resetButton.height) / 2) { // Zone large autour du bouton
-        return; // Ne pas traiter le drag si on est sur le bouton
+  // --- Logique pour l'ÉCRAN 1: Glisser-déposer & Boutons ---
+  if (currentScreen === 1) {
+    // Vérifier clic sur les boutons d'abord
+    let dReset = dist(mouseX, mouseY, resetButton.x + resetButton.width / 2, resetButton.y + resetButton.height / 2);
+    let dTest = dist(mouseX, mouseY, testButton.x + testButton.width / 2, testButton.y + testButton.height / 2);
+
+    if (dReset < max(resetButton.width, resetButton.height) / 2 || dTest < max(testButton.width, testButton.height) / 2) {
+      // Clic sur un bouton, p5.dom s'en occupe, ne pas démarrer de drag
+      return;
     }
 
-
-  // Si on ne clique pas sur le bouton, on vérifie le drag des cercles
-  draggedCircleIndex = -1; // Réinitialiser au cas où
-  for (let i = elementCircles.length - 1; i >= 0; i--) {
-    let circle = elementCircles[i];
-    let distance = dist(mouseX, mouseY, circle.currentPos.x, circle.currentPos.y);
-    if (distance < circle.diameter / 2) {
-      circle.isDragging = true;
-      draggedCircleIndex = i;
-      dragOffsetX = mouseX - circle.currentPos.x;
-      dragOffsetY = mouseY - circle.currentPos.y;
-      // Mettre le cercle glissé au premier plan (en le redessinant en dernier) - Optionnel mais mieux
-      // Pour cela, on le retire et on le remet à la fin du tableau
-      // let dragged = elementCircles.splice(i, 1)[0];
-      // elementCircles.push(dragged);
-      // draggedCircleIndex = elementCircles.length - 1; // Mettre à jour l'index !
-      // Note: Cette optimisation du dessin rend la logique plus complexe, à évaluer. Pour l'instant, on laisse sans.
-      break;
+    // Si pas sur un bouton, vérifier le drag des cercles éléments
+    draggedCircleIndex = -1;
+    for (let i = elementCircles.length - 1; i >= 0; i--) {
+      let circle = elementCircles[i];
+      let distance = dist(mouseX, mouseY, circle.currentPos.x, circle.currentPos.y);
+      if (distance < circle.diameter / 2) {
+        circle.isDragging = true;
+        draggedCircleIndex = i;
+        dragOffsetX = mouseX - circle.currentPos.x;
+        dragOffsetY = mouseY - circle.currentPos.y;
+        break;
+      }
     }
   }
+  // --- Logique pour l'ÉCRAN 2: Appliquer le test ---
+  else if (currentScreen === 2 && testData !== null) {
+      // Vérifier si on clique sur l'un des cercles de la carte
+      for (let i = 0; i < mapCircles.length; i++) {
+          let mapCircle = mapCircles[i];
+          let distance = dist(mouseX, mouseY, mapCircle.pos.x, mapCircle.pos.y);
+
+          if (distance < mapCircle.currentDiameter / 2) {
+              // Clic sur ce cercle ! Appliquer l'effet.
+              applyTestEffect(mapCircle, testData);
+              // Réinitialiser les données de test (le test est utilisé)
+              testData = null;
+              // On a trouvé la cible, on arrête de chercher
+              break;
+          }
+      }
+  }
 }
+
+// --- Fonction pour appliquer l'effet du test (Écran 2) ---
+function applyTestEffect(targetMapCircle, data) {
+    console.log(`Test appliqué sur ${targetMapCircle.name} avec : ${data.names.join(' + ')}`);
+
+    // 4) Interaction spécifique: Zinc sur Zone Verte
+    // Vérifier si 'Zinc' est dans les noms testés ET si la cible est la verte
+    if (data.names.includes("Zinc") && targetMapCircle.name === "Zone Verte") {
+        console.log("Effet spécial: Zinc sur Zone Verte !");
+        targetMapCircle.currentDiameter += 50; // Augmenter la taille
+    }
+
+    // Ajouter d'autres interactions ici si besoin
+    // else if (data.names.includes("Cuivre") && targetMapCircle.name === "Zone Rouge") { ... }
+}
+
 
 function mouseDragged() {
-  if (draggedCircleIndex !== -1) {
-    let circle = elementCircles[draggedCircleIndex];
-    circle.currentPos.x = mouseX - dragOffsetX;
-    circle.currentPos.y = mouseY - dragOffsetY;
+  // Ne glisser que sur l'écran 1
+  if (currentScreen !== 1 || draggedCircleIndex === -1) {
+    return;
   }
+  let circle = elementCircles[draggedCircleIndex];
+  circle.currentPos.x = mouseX - dragOffsetX;
+  circle.currentPos.y = mouseY - dragOffsetY;
 }
 
 function mouseReleased() {
-  if (draggedCircleIndex !== -1) {
-    let circle = elementCircles[draggedCircleIndex];
-    circle.isDragging = false;
-
-    // 3) Vérifier si on lâche sur la cible
-    let distToTarget = dist(circle.currentPos.x, circle.currentPos.y, targetCirclePos.x, targetCirclePos.y);
-
-    if (distToTarget < TARGET_CIRCLE_DIAMETER / 2) {
-      // 4) Collision ! Ajouter la couleur si moins de 2 couleurs déjà présentes
-      if (targetStoredColors.length < 2) {
-        // Éviter d'ajouter la même couleur deux fois de suite ? (optionnel)
-         // if (!targetStoredColors.includes(circle.color)) { // Ne fonctionne pas directement avec les objets color p5js
-         //   targetStoredColors.push(circle.color);
-         //   updateTargetColor(); // Mettre à jour le mélange
-         // }
-         // Version simple: on ajoute toujours si < 2
-         targetStoredColors.push(circle.color);
-         updateTargetColor(); // Mettre à jour le mélange
-      }
-      // Si 2 couleurs ou plus, on n'ajoute rien.
-    }
-
-    // 6) Toujours ramener le cercle à sa position initiale
-    circle.currentPos.set(circle.initialPos);
-    draggedCircleIndex = -1;
+  // Ne gérer le relâchement que sur l'écran 1
+  if (currentScreen !== 1 || draggedCircleIndex === -1) {
+    return;
   }
+
+  let circle = elementCircles[draggedCircleIndex];
+  circle.isDragging = false;
+
+  // Vérifier si on lâche sur la cible (Écran 1)
+  let distToTarget = dist(circle.currentPos.x, circle.currentPos.y, targetCirclePos.x, targetCirclePos.y);
+
+  if (distToTarget < TARGET_CIRCLE_DIAMETER / 2) {
+    // Collision ! Ajouter couleur et nom si possible
+    if (targetStoredColors.length < 2) {
+       // Éviter les doublons (vérifier par nom)
+       if (!targetStoredNames.includes(circle.name)) {
+           targetStoredColors.push(circle.color);
+           targetStoredNames.push(circle.name); // Stocker aussi le nom !
+           updateTargetColor();
+       } else {
+           console.log(`${circle.name} est déjà dans la cible.`);
+       }
+    } else {
+        console.log("Cible pleine (max 2 couleurs).");
+    }
+  }
+
+  // Toujours ramener le cercle à sa position initiale
+  circle.currentPos.set(circle.initialPos);
+  draggedCircleIndex = -1;
 }
 
 // --- Fonction pour gérer le redimensionnement ---
@@ -267,10 +397,8 @@ function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
   // Recalculer toutes les positions
   initializePositions();
-  // Pas besoin de rappeler updateTargetColor ici, la couleur reste la même.
+  // Pas besoin de rappeler updateTargetColor ici.
+  // Le repositionnement des boutons est géré dans initializePositions via styleActionButtons.
 }
 
-
-function name(params) {
-  
-}
+// Supprimer la fonction vide "name(params)"
