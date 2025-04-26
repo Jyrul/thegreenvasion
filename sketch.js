@@ -41,6 +41,7 @@ let testData = null; // Sera { colors: [...], names: [...] }
 // Variable check
 let ifSolutionIsTest = false;
 let ifPreloadLaboScreen = false;
+let ifPreloadMapScreen = false;
 
 // Variables pour les cercles de l'écran 2 (Map)
 let mapCircles = [];
@@ -49,6 +50,25 @@ const MAP_CIRCLE_BASE_DIAMETER = 120;
 
 // --- Fonction setup() ---
 function setup() {
+  createCanvas(windowWidth, windowHeight);
+
+  // Définir les propriétés des 3 cercles de la carte (écran 2)
+  mapCircles = [
+    { name: "Zone Verte", color: color(0, 150, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }, // Vert
+    { name: "Zone Rouge", color: color(200, 0, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }, // Rouge
+    { name: "Zone Bleue", color: color(0, 0, 200), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }  // Bleu
+  ];
+
+  // Initialiser/calculer les positions des cercles dans la Map
+  initializePositions();
+
+  // Définir les propriétés des 4 cercles éléments (écran 1)
+  elementCircles = [
+    { name: "Zinc", color: color(128, 0, 128), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // Pourpre
+    { name: "Cuivre", color: color(184, 115, 51), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // #B87333
+    { name: "Azote", color: color(0, 128, 128), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // #008080
+    { name: "Soufre", color: color(176, 196, 222), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }  // #B0C4DE
+  ];
 }
 
 
@@ -56,8 +76,6 @@ function setup() {
 function draw() {
   background('#d3d3d3');
 
-  // Afficher l'écran actuel
-  
   // Afficher l'écran actuel
   if (currentScreen === 1) {
     menuScreen();
@@ -93,18 +111,14 @@ function draw() {
   }
 }
 
-function preloadMenuScreen() {
-  
-}
-
 // --- Fonction pour dessiner l'écran 1 (Labo) ---
 function menuScreen() {
   text("sovihsv", width/2, height/2)
   fill(0);
 
-  laboCircleX = width/4;
+  laboCircleX = 3*width/4;
   laboCircleY = height/2;
-  mapCircleX = 3*width/4;
+  mapCircleX = width/4;
   mapCircleY = height/2;
   
   circle(laboCircleX, laboCircleY, LABO_CIRCLE_DIAMETER);
@@ -113,27 +127,11 @@ function menuScreen() {
 
 // --- Charger la vue du labo ---
 function preloadLaboScreen() {
-  createCanvas(windowWidth, windowHeight);
   ellipseMode(CENTER);
   textAlign(CENTER, CENTER);
   textSize(LABEL_TEXT_SIZE);
-
-  // Définir les propriétés des 4 cercles éléments (écran 1)
-  elementCircles = [
-    { name: "Zinc", color: color(128, 0, 128), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // Pourpre
-    { name: "Cuivre", color: color(184, 115, 51), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // #B87333
-    { name: "Azote", color: color(0, 128, 128), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // #008080
-    { name: "Soufre", color: color(176, 196, 222), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }  // #B0C4DE
-  ];
-
-  // Définir les propriétés des 3 cercles de la carte (écran 2)
-  mapCircles = [
-      { name: "Zone Verte", color: color(0, 150, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }, // Vert
-      { name: "Zone Rouge", color: color(200, 0, 0), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }, // Rouge
-      { name: "Zone Bleue", color: color(0, 0, 200), pos: createVector(0, 0), currentDiameter: MAP_CIRCLE_BASE_DIAMETER }  // Bleu
-  ];
   
-  // Initialiser/calculer les positions
+  // Initialiser/calculer les positions des cercles dans la Map
   initializePositions();
 
   // Calculer la couleur initiale de la cible (blanc)
@@ -182,6 +180,30 @@ function laboSreen() {
     text(textContent, circle.currentPos.x, labelY);
   }
   // Les boutons sont gérés par draw() et p5.dom
+}
+
+function preloadMapScreen() {
+  ellipseMode(CENTER);
+  textAlign(CENTER, CENTER);
+  textSize(LABEL_TEXT_SIZE);
+  
+  // Initialiser/calculer les positions des cercles dans la Map
+  initializePositions();
+
+  // Calculer la couleur initiale de la cible (blanc)
+  updateTargetColor();
+
+  // Créer les boutons
+  backButton = createButton('Retour'); // Création du nouveau bouton
+
+  // Positionner et styler les boutons
+  styleActionButtons();
+
+  // Associer les fonctions aux clics
+  backButton.mousePressed(goBackView);// Associer la nouvelle fonction
+
+  //Faire en sorte que ça ne se charge qu'une fois
+  ifPreloadMapScreen = false;
 }
 
 // --- Fonction pour dessiner l'écran 3 (Map) ---
@@ -268,7 +290,6 @@ function styleActionButtons() {
 // --- Fonction pour initialiser/réinitialiser les positions ---
 function initializePositions() {
   // --- Écran 1: Cercles éléments ---
-  let elementRadius = ELEMENT_CIRCLE_DIAMETER / 2;
   let squareCenterX = width / 4;
   let squareCenterY = height / 2;
   let squareSpacing = ELEMENT_CIRCLE_DIAMETER * 0.8;
@@ -303,8 +324,10 @@ function initializePositions() {
   }
 }
 
+// --- Retourner dans la scène principale
 function goBackView() {
   currentScreen = 1;
+  targetStoredColors = [];
 }
 
 
@@ -336,11 +359,12 @@ function prepareColorTest() {
             colors: [...targetStoredColors], // Copie des couleurs
             names: [...targetStoredNames]   // Copie des noms
         };
-        // Passer à l'écran 2
-        currentScreen = 2;
-        // Cacher les boutons de l'écran 1
+        // Passer à l'écran 3
+        currentScreen = 3;
+        // Cacher les boutons de l'écran 2
         resetButton.hide();
         testButton.hide();
+        backButton.hide();
     } else {
         console.log("Aucune couleur à tester !"); // Message si la cible est vide
     }
@@ -348,24 +372,6 @@ function prepareColorTest() {
 
 
 //////  Gestions des intéractions  //////
-
-// --- Fonction keyPressed() ---
-function keyPressed() {
-  // Permettre de changer d'écran SEULEMENT si on n'est pas en train de tester
-  if (testData === null && (keyCode === RIGHT_ARROW || keyCode === LEFT_ARROW)) {
-      //currentScreen = (currentScreen === 1) ? 2 : 1;
-      currentScreen = (currentScreen === 1) ? 2 : 1;
-      // Gérer la visibilité des boutons lors du changement manuel
-      if (currentScreen === 1 && resetButton && testButton) {
-          resetButton.show();
-          testButton.show();
-      } else if (resetButton && testButton) {
-          ifSolutionIsTest = false;
-          resetButton.hide();
-          testButton.hide();
-      }
-  }
-}
 
 // --- Fonctions pour gérer les interactions souris ---
 function mousePressed() {
@@ -376,10 +382,9 @@ function mousePressed() {
       ifPreloadLaboScreen = true;
     }
 
-    console.log(dist(mouseX, mouseY,laboCircleX, laboCircleY));
-
     if (dist(mouseX, mouseY, mapCircleX, mapCircleY) < MAP_CIRCLE_DIAMETER) {
       currentScreen = 3;
+      ifPreloadMapScreen = true;
     }
   }
 
@@ -417,6 +422,7 @@ function mousePressed() {
           let distance = dist(mouseX, mouseY, mapCircle.pos.x, mapCircle.pos.y);
 
           if (distance < mapCircle.currentDiameter / 2) {
+
               // Clic sur ce cercle ! Appliquer l'effet.
               applyTestEffect(mapCircle, testData);
               // Réinitialiser les données de test (le test est utilisé)
