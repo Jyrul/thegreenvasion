@@ -40,6 +40,9 @@ let dragOffsetY = 0;
 // Variables pour les cercles de la carte (affichée sur l'écran 1)
 let mapCircles = [];
 
+// Variables pour les recherches sur la carte (affichée sur l'écran 1)
+let studyCircles = [];
+
 // Variables pour les cercles de la carte (affichée sur l'écran 3)
 let seaweedOptionPosY, seaweedOptionDiam;
 let seaweedGreenOptionPosX, seaweedPurpleOptionPosX, seaweedRedOptionPosX;
@@ -92,6 +95,13 @@ function setup() {
     { name: "Cuivre", color: color(184, 115, 51), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // #B87333
     { name: "Azote", color: color(0, 128, 128), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }, // #008080
     { name: "Soufre", color: color(176, 196, 222), initialPos: createVector(0, 0), currentPos: createVector(0, 0), isDragging: false, diameter: ELEMENT_CIRCLE_DIAMETER }  // #B0C4DE
+  ];
+
+  // Définir les propriétés des 3 étude (écran 1 Map)
+  studyCircles = [
+    { name: "Diatomées", type: "", currentPos: createVector(0, 0), turnUntilDraft: null},
+    { name: "Euglènes", type: "", currentPos: createVector(0, 0), turnUntilDraft: null},
+    { name: "Rhodophytes", type: "", currentPos: createVector(0, 0), turnUntilDraft: null}
   ];
 
   // IMPORTANT: Calculer les positions initiales AVANT de créer/styler les boutons
@@ -457,7 +467,16 @@ function mousePressed() {
       goToLaboScreen();
       return; // Important: ne pas vérifier autre chose si on a cliqué ici
     }
-    // Ici, tu pourrais ajouter des interactions avec la carte si nécessaire
+
+    // Dessiner les 3 cercles de la carte
+    for (let i = 0; i < mapCircles.length; i++) {
+      let mapCircle = mapCircles[i];
+
+      let d = dist(mouseX, mouseY, mapCircle.pos.x, mapCircle.pos.y);
+      if (d < mapCircle.currentDiameter + 10) {
+        startStudyForSeaweed();
+      }
+    }
   }
 
   // --- Interaction Écran 2 (Labo) ---
@@ -603,16 +622,16 @@ function addSolutionCreated() {
     targetStoredNames.forEach(item => {
       switch (item) {
         case "Zinc":
-          mapCircles[0].currentDiameter -= 4; 
+          mapCircles[1].currentDiameter -= 4; 
           break;
         case "Cuivre":
-          mapCircles[0].currentDiameter += 7; 
+          mapCircles[1].currentDiameter += 7; 
           break;
         case "Azote":
-          mapCircles[0].currentDiameter -= 1; 
+          mapCircles[1].currentDiameter -= 1; 
           break;
         case "Soufre":
-          mapCircles[0].currentDiameter -= 8; 
+          mapCircles[1].currentDiameter -= 8; 
           break;
         default:
           break;
@@ -622,16 +641,16 @@ function addSolutionCreated() {
     targetStoredNames.forEach(item => {
       switch (item) {
         case "Zinc":
-          mapCircles[0].currentDiameter += 0; 
+          mapCircles[2].currentDiameter += 0; 
           break;
         case "Cuivre":
-          mapCircles[0].currentDiameter -= 19; 
+          mapCircles[2].currentDiameter -= 19; 
           break;
         case "Azote":
-          mapCircles[0].currentDiameter -= 9; 
+          mapCircles[2].currentDiameter -= 9; 
           break;
         case "Soufre":
-          mapCircles[0].currentDiameter += 12; 
+          mapCircles[2].currentDiameter += 12; 
           break;
         default:
           break;
@@ -654,4 +673,9 @@ function updateSeaweedGrowth() {
       // Ici tu pourrais ajouter d'autres logiques de fin de tour
       // comme l'évolution de l'environnement, etc.
   }
+}
+
+// --- Fonction appelée par le bouton "Passer le tour" (Écran 1) ---
+function startStudyForSeaweed() {
+  
 }
