@@ -121,6 +121,8 @@ function resetTargetColor() {
     updateTargetColor(); // Mettre à jour la couleur affichée
 }
 
+
+
 // --- Fonction draw() ---
 function draw() {
   background('#d3d3d3');
@@ -132,8 +134,10 @@ function draw() {
   }
 }
 
+
+
 // --- Fonction pour dessiner l'écran 1 ---
-function drawScreen1() {
+function laboSreen() {
   // --- Dessiner le cercle cible (droite) ---
   // 2) Utiliser la couleur calculée (initialement blanc)
   fill(currentTargetColor);
@@ -164,11 +168,21 @@ function drawScreen1() {
    // Le bouton est un élément HTML, p5 le dessine automatiquement
 }
 
+
+
+
+
+
 // --- Fonction pour dessiner l'écran 2 ---
-function drawScreen2() {
+function mapScreen() {
   fill(0); noStroke(); textSize(32); textAlign(CENTER, CENTER);
   text("Écran 2", width / 2, height / 2);
 }
+
+
+
+
+
 
 // --- Fonction keyPressed() ---
 function keyPressed() {
@@ -254,4 +268,9 @@ function windowResized() {
   // Recalculer toutes les positions
   initializePositions();
   // Pas besoin de rappeler updateTargetColor ici, la couleur reste la même.
+}
+
+
+function name(params) {
+  
 }
