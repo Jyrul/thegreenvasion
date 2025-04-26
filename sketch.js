@@ -30,9 +30,15 @@ let testButton; // Nouveau bouton "Faire tester"
 // Variable pour stocker les données à tester sur l'écran 2
 let testData = null; // Sera { colors: [...], names: [...] }
 
+// Variable check
+let ifSolutionIsTest = false;
+
 // Variables pour les cercles de l'écran 2 (Map)
 let mapCircles = [];
 const MAP_CIRCLE_BASE_DIAMETER = 120;
+
+
+
 
 // --- Fonction setup() ---
 function setup() {
@@ -83,11 +89,11 @@ function styleActionButtons() {
     let spacing = 10; // Espace entre les boutons
 
     // Positionner Vider (à gauche)
-    let resetButtonX = targetCirclePos.x + resetButton.width / 4 + spacing / 4;
+    let resetButtonX = targetCirclePos.x - resetButton.width - spacing;
     resetButton.position(resetButtonX, commonY - resetButton.height / 2);
 
     // Positionner Faire tester (à droite)
-    let testButtonX = targetCirclePos.x + testButton.width / 2 + spacing / 2;
+    let testButtonX = targetCirclePos.x + testButton.width + spacing;
     testButton.position(testButtonX - testButton.width, commonY - testButton.height / 2); // Ajustement pour aligner à droite du centre
 
     // Style commun (optionnel)
@@ -104,6 +110,106 @@ function styleActionButtons() {
     });
 }
 
+// --- Fonction draw() ---
+function draw() {
+  background('#d3d3d3');
+
+  // Afficher l'écran actuel
+  
+  // Afficher l'écran actuel
+  if (currentScreen === 1) {
+    menuScreen();
+    // S'assurer que les boutons sont visibles (au cas où on reviendrait à l'écran 1)
+    if (resetButton && testButton) {
+        resetButton.show();
+        testButton.show();
+    }
+  } else if (currentScreen === 2) {
+    laboSreen();
+    // S'assurer que les boutons sont visibles (au cas où on reviendrait à l'écran 1)
+    if (resetButton && testButton) {
+        resetButton.show();
+        testButton.show();
+    }
+  } else if (currentScreen === 3) {
+    mapScreen();
+    // S'assurer que les boutons sont cachés
+     if (resetButton && testButton) {
+        resetButton.hide();
+        testButton.hide();
+    }
+  }
+}
+
+// --- Fonction pour dessiner l'écran 1 (Labo) ---
+function menuScreen() {
+  text("sovihsv", width/2, height/2)
+}
+
+// --- Fonction pour dessiner l'écran 2 (Labo) ---
+function laboSreen() {
+  // Dessiner le cercle cible (droite)
+  fill(currentTargetColor);
+  stroke(0); strokeWeight(1);
+  ellipse(targetCirclePos.x, targetCirclePos.y, TARGET_CIRCLE_DIAMETER, TARGET_CIRCLE_DIAMETER);
+
+  // Dessiner les cercles éléments (gauche) et leurs labels
+  let radius = ELEMENT_CIRCLE_DIAMETER / 2;
+  for (let i = 0; i < elementCircles.length; i++) {
+    let circle = elementCircles[i];
+    // Dessiner le cercle
+    fill(circle.color); stroke(0); strokeWeight(1);
+    ellipse(circle.currentPos.x, circle.currentPos.y, circle.diameter, circle.diameter);
+    // Dessiner le label
+    let labelY = circle.currentPos.y + radius + LABEL_PADDING + LABEL_TEXT_SIZE / 2;
+    let textContent = circle.name;
+    let textW = textWidth(textContent);
+    let rectWidth = textW + LABEL_PADDING * 2;
+    let rectHeight = LABEL_TEXT_SIZE + LABEL_PADDING;
+    fill(255); noStroke(); rectMode(CENTER);
+    rect(circle.currentPos.x, labelY, rectWidth, rectHeight, 5);
+    fill(0); textAlign(CENTER, CENTER); textSize(LABEL_TEXT_SIZE);
+    text(textContent, circle.currentPos.x, labelY);
+  }
+  // Les boutons sont gérés par draw() et p5.dom
+}
+
+// --- Fonction pour dessiner l'écran 3 (Map) ---
+function mapScreen() {
+  // 2) Dessiner les 3 cercles de la carte
+  for (let i = 0; i < mapCircles.length; i++) {
+      let mapCircle = mapCircles[i];
+      fill(mapCircle.color);
+      stroke(0);
+      strokeWeight(1);
+      // Utiliser currentDiameter pour permettre le changement de taille
+      circle(mapCircle.pos.x, mapCircle.pos.y, mapCircle.currentDiameter);
+
+      // Optionnel: Afficher le nom de la zone
+      fill(255); // Texte blanc
+      noStroke();
+      textSize(LABEL_TEXT_SIZE);
+      text(mapCircle.name, mapCircle.pos.x, mapCircle.pos.y);
+  }
+
+  // Indiquer à l'utilisateur s'il a une couleur à tester
+  if (testData !== null) {
+      fill(0);
+      textSize(20);
+      textAlign(CENTER, TOP);
+      text("Cliquez sur une zone pour tester la combinaison.", width / 2, 20);
+      // On pourrait afficher les noms des couleurs à tester
+      // text(`Test en cours: ${testData.names.join(' + ')}`, width / 2, 50);
+  } 
+
+  if (ifSolutionIsTest == true) {
+      // Message si aucune couleur n'est en cours de test
+      fill(0);
+      textSize(20);
+      textAlign(CENTER, TOP);
+      text("Retournez au labo (flèches) pour créer une combinaison.", width / 2, 20);
+  }
+}
 
 // --- Fonction pour initialiser/réinitialiser les positions ---
 function initializePositions() {
@@ -184,106 +290,22 @@ function prepareColorTest() {
 }
 
 
-// --- Fonction draw() ---
-function draw() {
-  background('#d3d3d3');
 
-  // Afficher l'écran actuel
-  if (currentScreen === 1) {
-    laboSreen();
-    // S'assurer que les boutons sont visibles (au cas où on reviendrait à l'écran 1)
-    if (resetButton && testButton) {
-        resetButton.show();
-        testButton.show();
-    }
-  } else if (currentScreen === 2) {
-    mapScreen();
-    // S'assurer que les boutons sont cachés
-     if (resetButton && testButton) {
-        resetButton.hide();
-        testButton.hide();
-    }
-  }
-}
-
-// --- Fonction pour dessiner l'écran 1 (Labo) ---
-function laboSreen() {
-  // Dessiner le cercle cible (droite)
-  fill(currentTargetColor);
-  stroke(0); strokeWeight(1);
-  ellipse(targetCirclePos.x, targetCirclePos.y, TARGET_CIRCLE_DIAMETER, TARGET_CIRCLE_DIAMETER);
-
-  // Dessiner les cercles éléments (gauche) et leurs labels
-  let radius = ELEMENT_CIRCLE_DIAMETER / 2;
-  for (let i = 0; i < elementCircles.length; i++) {
-    let circle = elementCircles[i];
-    // Dessiner le cercle
-    fill(circle.color); stroke(0); strokeWeight(1);
-    ellipse(circle.currentPos.x, circle.currentPos.y, circle.diameter, circle.diameter);
-    // Dessiner le label
-    let labelY = circle.currentPos.y + radius + LABEL_PADDING + LABEL_TEXT_SIZE / 2;
-    let textContent = circle.name;
-    let textW = textWidth(textContent);
-    let rectWidth = textW + LABEL_PADDING * 2;
-    let rectHeight = LABEL_TEXT_SIZE + LABEL_PADDING;
-    fill(255); noStroke(); rectMode(CENTER);
-    rect(circle.currentPos.x, labelY, rectWidth, rectHeight, 5);
-    fill(0); textAlign(CENTER, CENTER); textSize(LABEL_TEXT_SIZE);
-    text(textContent, circle.currentPos.x, labelY);
-  }
-  // Les boutons sont gérés par draw() et p5.dom
-}
-
-// --- Fonction pour dessiner l'écran 2 (Map) ---
-function mapScreen() {
-  // 2) Dessiner les 3 cercles de la carte
-  for (let i = 0; i < mapCircles.length; i++) {
-      let mapCircle = mapCircles[i];
-      fill(mapCircle.color);
-      stroke(0);
-      strokeWeight(1);
-      // Utiliser currentDiameter pour permettre le changement de taille
-      ellipse(mapCircle.pos.x, mapCircle.pos.y, mapCircle.currentDiameter, mapCircle.currentDiameter);
-
-      // Optionnel: Afficher le nom de la zone
-      fill(255); // Texte blanc
-      noStroke();
-      textSize(LABEL_TEXT_SIZE);
-      text(mapCircle.name, mapCircle.pos.x, mapCircle.pos.y);
-  }
-
-  // Indiquer à l'utilisateur s'il a une couleur à tester
-  if (testData !== null) {
-      fill(0);
-      textSize(20);
-      textAlign(CENTER, TOP);
-      text("Cliquez sur une zone pour tester la combinaison.", width / 2, 20);
-      // On pourrait afficher les noms des couleurs à tester
-      // text(`Test en cours: ${testData.names.join(' + ')}`, width / 2, 50);
-  } else {
-      // Message si aucune couleur n'est en cours de test
-      fill(0);
-      textSize(20);
-      textAlign(CENTER, TOP);
-      text("Retournez au labo (flèches) pour créer une combinaison.", width / 2, 20);
-  }
-}
 
 // --- Fonction keyPressed() ---
 function keyPressed() {
   // Permettre de changer d'écran SEULEMENT si on n'est pas en train de tester
   if (testData === null && (keyCode === RIGHT_ARROW || keyCode === LEFT_ARROW)) {
-      currentScreen = (currentScreen === 1) ? 2 : 1;
+      currentScreen = (currentScreen === 1) ? 3 : 1;
       // Gérer la visibilité des boutons lors du changement manuel
       if (currentScreen === 1 && resetButton && testButton) {
           resetButton.show();
           testButton.show();
       } else if (resetButton && testButton) {
+          ifSolutionIsTest = false;
           resetButton.hide();
           testButton.hide();
       }
-  } else if (testData !== null && (keyCode === RIGHT_ARROW || keyCode === LEFT_ARROW)) {
-      console.log("Terminez le test avant de changer d'écran.");
   }
 }
 
@@ -326,6 +348,8 @@ function mousePressed() {
               applyTestEffect(mapCircle, testData);
               // Réinitialiser les données de test (le test est utilisé)
               testData = null;
+              // On a tester donc on arrête le tuto
+              ifSolutionIsTest = true; 
               // On a trouvé la cible, on arrête de chercher
               break;
           }
